@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="cs" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Čtenář</title>
+<style>
+  /* === BAREVNÁ SCHÉMATA ===================================== */
+  :root {
+    --page: linear-gradient(165deg, #eef2f8 0%, #e7edf5 55%, #eae7f2 100%);
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #eef1f7;
+    --text: #202634;
+    --text-muted: #626c7d;
+    --border: #e2e7f0;
+    --accent: #5145e0;
+    --accent-2: #7c6ff0;
+    --accent-soft: #edecfb;
+    --accent-text: #ffffff;
+    --shadow: 0 2px 10px rgba(40,50,90,0.08);
+    --shadow-lg: 0 12px 40px rgba(40,50,90,0.18);
+    --ok: #12996a;
+    --warn: #d13b3b;
+    --chip-bg: #eef1f7;
+    --star: #f2a900;
+  }
+  html[data-theme="dark"] {
+    --page: linear-gradient(165deg, #0e1218 0%, #12161e 55%, #171522 100%);
+    --bg: #161a22;
+    --surface: #1b2029;
+    --surface-2: #232a35;
+    --text: #e8ebf0;
+    --text-muted: #98a1b0;
+    --border: #2b323e;
+    --accent: #8b83f5;
+    --accent-2: #a99ff8;
+    --accent-soft: #24243a;
+    --accent-text: #10121a;
+    --shadow: 0 2px 10px rgba(0,0,0,0.45);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.6);
+    --ok: #34c98a;
+    --warn: #ff6b6b;
+    --chip-bg: #232a35;
+    --star: #ffc043;
+  }
+
+  /* === ZÁKLAD =============================================== */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { background: var(--page); background-attachment: fixed; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--page);
+    background-attachment: fixed;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: color 0.2s ease;
+    font-size: 16.5px;
+    line-height: 1.45;
+  }
+
+  /* === HLAVIČKA ============================================= */
+  .app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 13px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .app-header::before {
+    content: "";
+    position: absolute; left: 0; right: 0; top: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  }
+  .app-header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--accent);
+  }
+  .app-header h1 .logo-emoji { font-size: 1.5rem; }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* === SYNC TLAČÍTKO ======================================== */
+  .sync-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .sync-btn:hover { border-color: var(--accent); }
+  .sync-btn .sync-icon { font-size: 1rem; }
+  .sync-btn[data-state="ok"] .sync-icon { color: var(--ok); }
+  .sync-btn[data-state="err"] .sync-icon { color: var(--warn); }
+  .sync-btn[data-state="syncing"] .sync-icon {
+    color: var(--accent);
+    display: inline-block;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* === THEME TOGGLE ======================================== */
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font: inherit;
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    user-select: none;
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+  .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .theme-toggle-icon { font-size: 1rem; line-height: 1; }
+  .theme-toggle-hint { color: var(--text-muted); font-size: 0.8rem; }
+  .theme-toggle[data-mode="day"] { background: #fff7d6; color: #5a4400; border-color: #e8d27a; }
+  .theme-toggle[data-mode="night"] { background: #1d2128; color: #e8eaed; border-color: #3a4150; }
+
+  /* === HLAVNÍ OBSAH ======================================== */
+  main {
+    flex: 1;
+    padding: 20px 26px;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* === TOOLBAR ============================================= */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .reader-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px 8px 6px 12px;
+  }
+  .reader-box label { font-size: 0.8rem; color: var(--text-muted); }
+  select, input[type="text"], input[type="date"], input[type="search"], input[type="password"], input[type="url"], input[type="number"], textarea {
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+  }
+  textarea { width: 100%; resize: vertical; min-height: 60px; }
+  .grow { flex: 1; min-width: 160px; }
+  .btn {
+    font: inherit;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn-primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-sm { padding: 5px 9px; font-size: 0.82rem; }
+  .btn-icon { background: none; border: none; cursor: pointer; font-size: 1rem; color: var(--text-muted); padding: 4px 6px; border-radius: 6px; }
+  .btn-icon:hover { background: var(--surface-2); color: var(--text); }
+  .btn-danger:hover { color: var(--warn); }
+
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+  .stats .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 12px;
+  }
+  .stats .stat b { color: var(--text); }
+
+  /* === TABULKA ============================================= */
+  .table-wrap {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  table.books { width: 100%; border-collapse: collapse; }
+  table.books th, table.books td {
+    text-align: left;
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  table.books tbody tr:last-child td { border-bottom: none; }
+  table.books thead th {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+    z-index: 1;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  table.books thead th.no-sort { cursor: default; }
+  table.books thead th:not(.no-sort):hover { color: var(--accent); }
+  table.books tbody tr { transition: background 0.1s ease; }
+  table.books tbody tr:hover { background: var(--accent-soft); }
+  .book-title { font-weight: 600; font-size: 1.02rem; }
+  .book-sub { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+  .cell-track { white-space: nowrap; }
+
+  /* přebaly */
+  .cell-cover { width: 62px; padding-right: 0 !important; }
+  .cover {
+    width: 54px; height: 80px; border-radius: 6px; object-fit: cover;
+    background: var(--surface-2); border: 1px solid var(--border); display: block;
+    box-shadow: 0 2px 6px rgba(30,40,80,0.16);
+  }
+  .cover-ph {
+    width: 54px; height: 80px; border-radius: 6px; border: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--surface-2), var(--accent-soft));
+    color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+    box-shadow: 0 2px 6px rgba(30,40,80,0.10);
+  }
+  .cover-click { cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+  .cover-click:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 6px 16px rgba(30,40,80,0.28); }
+  .cover-preview { width: 120px; height: 176px; }
+  .cover-row { display: flex; align-items: center; gap: 10px; }
+  .sort-ind { font-size: 0.72rem; opacity: 0.85; margin-left: 3px; }
+  .book-title.clickable { cursor: pointer; }
+  .book-title.clickable:hover { color: var(--accent); }
+
+  .chip {
+    display: inline-block;
+    font-size: 0.74rem;
+    background: var(--chip-bg);
+    color: var(--text-muted);
+    border-radius: 999px;
+    padding: 2px 9px;
+    margin: 2px 2px 0 0;
+  }
+  .chip.owned { background: rgba(26,158,92,0.15); color: var(--ok); }
+  .chip.wish { background: rgba(198,40,40,0.12); color: var(--warn); }
+
+  /* checkbox styled */
+  .chk { width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent); }
+
+  /* stars */
+  .stars { display: inline-flex; gap: 1px; font-size: 1.05rem; cursor: pointer; user-select: none; }
+  .stars .st { color: var(--border); }
+  .stars .st.on { color: var(--star); }
+
+  .read-date { font-size: 0.74rem; color: var(--text-muted); }
+  .note-flag { color: var(--accent); }
+
+  /* === MODÁLY ============================================= */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    width: 100%;
+    max-width: 540px;
+    padding: 22px 24px;
+  }
+  .modal h2 { margin: 0 0 4px; font-size: 1.1rem; }
+  .modal .modal-desc { margin: 0 0 16px; font-size: 0.83rem; color: var(--text-muted); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 0.78rem; color: var(--text-muted); }
+  .field input, .field select { width: 100%; }
+  .modal-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+  .modal-actions .left { margin-right: auto; }
+  .status-line { font-size: 0.82rem; margin-top: 12px; padding: 8px 10px; border-radius: 8px; background: var(--surface); color: var(--text-muted); }
+  .status-line.ok { color: var(--ok); }
+  .status-line.err { color: var(--warn); }
+  .hint { font-size: 0.76rem; color: var(--text-muted); }
+  .reader-list { list-style: none; margin: 0; padding: 0; }
+  .reader-list li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .reader-list li .rname { flex: 1; }
+  .code-box { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.82rem; word-break: break-all; }
+
+  .empty { text-align: center; color: var(--text-muted); padding: 40px 10px; }
+
+  /* === DETAIL KNIHY ======================================== */
+  .detail-modal { max-width: 560px; }
+  .detail-head { display: flex; gap: 18px; align-items: flex-start; }
+  .detail-head .cover-preview, .detail-head .cover-ph.cover-preview { flex: 0 0 auto; }
+  .detail-metahead { min-width: 0; }
+  .detail-metahead h2 { margin: 2px 0 6px; font-size: 1.35rem; line-height: 1.2; }
+  .detail-author { color: var(--text-muted); font-size: 1rem; margin-bottom: 8px; }
+  .detail-stars .stars { font-size: 1.35rem; }
+  .stars.readonly { cursor: default; }
+  .detail-grid {
+    display: grid; grid-template-columns: auto 1fr; gap: 8px 16px;
+    margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border);
+    font-size: 0.98rem;
+  }
+  .dg-label { color: var(--text-muted); }
+  .dg-value { font-weight: 500; }
+
+  /* === ZÁPATÍ ============================================== */
+  .app-footer {
+    padding: 12px 24px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  /* === RESPONZIVITA ======================================== */
+  /* Tablet: povol vodorovný posun tabulky, ať se neztratí sloupce */
+  @media (max-width: 1000px) {
+    .table-wrap { overflow-x: auto; }
+    table.books { min-width: 820px; }
+  }
+  /* Mobil: tabulka -> karty, větší a čitelnější písmo */
+  @media (max-width: 700px) {
+    body { font-size: 17px; }
+    .app-header { flex-wrap: wrap; height: auto; padding: 10px 14px; gap: 8px; }
+    .app-header h1 { font-size: 1.2rem; }
+    main { padding: 14px; }
+    .toolbar { gap: 8px; }
+    .toolbar .grow { min-width: 100%; }
+    select, input[type="text"], input[type="date"], input[type="search"],
+    input[type="password"], input[type="url"], input[type="number"], textarea { font-size: 1rem; padding: 9px 11px; }
+    .btn { font-size: 0.95rem; padding: 10px 14px; }
+    .stats { font-size: 0.9rem; }
+
+    .table-wrap { overflow: visible; background: transparent; border: none; box-shadow: none; border-radius: 0; }
+    table.books { min-width: 0; display: block; }
+    table.books thead { display: none; }
+    table.books tbody { display: block; }
+    table.books tbody tr {
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 12px;
+      padding: 13px 15px 15px;
+      margin-bottom: 13px;
+      box-shadow: var(--shadow);
+    }
+    table.books tbody tr:hover { background: var(--surface); }
+    table.books tbody tr:last-child td { border-bottom: none; }
+    table.books td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border: none;
+      padding: 6px 0;
+      font-size: 0.98rem;
+    }
+    table.books td[data-l]::before {
+      content: attr(data-l);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text-muted);
+      flex: 0 0 auto;
+    }
+    /* přebal + název nahoře vedle sebe */
+    table.books td.cell-cover { width: auto; float: left; margin: 0 14px 4px 0; padding: 0 !important; }
+    table.books td.cell-cover::before { content: none; }
+    .cover, .cover-ph { width: 64px; height: 94px; }
+    .cover-preview, .cover-ph.cover-preview { width: 108px; height: 158px; }
+    table.books td.cell-main { display: block; overflow: hidden; }
+    table.books td.cell-main::before { content: none; }
+    .book-title { font-size: 1.12rem; }
+    .book-sub { font-size: 0.9rem; }
+    .chip { font-size: 0.85rem; }
+    .cell-track { white-space: normal; }
+    .stars { font-size: 1.35rem; }
+    .chk { width: 24px; height: 24px; }
+    .read-date input[type="date"] { font-size: 0.95rem !important; }
+    .form-grid { grid-template-columns: 1fr; }
+    .modal { padding: 18px 16px; }
+    .modal-overlay { padding: 16px 10px; }
+  }
+  @media (max-width: 380px) {
+    .header-actions { gap: 6px; }
+    .theme-toggle, .sync-btn { padding: 6px 10px; }
+    .btn { padding: 9px 11px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1><span class="logo-emoji" aria-hidden="true">📚</span> Čtenář</h1>
+  <div class="header-actions">
+    <button class="sync-btn" id="syncBtn" type="button" data-state="off" title="Synchronizace přes GitHub Gist">
+      <span class="sync-icon" id="syncIcon" aria-hidden="true">☁</span>
+    </button>
+    <button
+      class="theme-toggle"
+      id="themeToggle"
+      type="button"
+      data-mode="auto"
+      aria-label="Přepnout režim zobrazení"
+      title="Klikni pro přepnutí režimu (Auto → Den → Noc)"
+    >
+      <span class="theme-toggle-icon" id="themeIcon" aria-hidden="true">◐</span>
+      <span class="theme-toggle-label" id="themeLabel">Auto</span>
+      <span class="theme-toggle-hint" id="themeHint">(noc)</span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="toolbar">
+    <div class="reader-box">
+      <label for="readerSel">Čtenář:</label>
+      <select id="readerSel"></select>
+      <button class="btn-icon" id="manageReaders" title="Spravovat čtenáře">⚙</button>
+    </div>
+    <input type="search" class="grow" id="search" placeholder="Hledat název / autora / sérii…" autocomplete="off">
+    <select id="fSerie"><option value="">Všechny série</option></select>
+    <select id="fZanr"><option value="">Všechny žánry</option></select>
+    <select id="fStav">
+      <option value="">Stav: vše</option>
+      <option value="vlastněno">Vlastněno</option>
+      <option value="k nákupu">K nákupu</option>
+    </select>
+    <select id="fTrack">
+      <option value="">Filtr čtenáře: vše</option>
+      <option value="ctecka">Ve čtečce</option>
+      <option value="notctecka">Není ve čtečce</option>
+      <option value="precteno">Přečteno</option>
+      <option value="neprecteno">Nepřečteno</option>
+    </select>
+    <button class="btn btn-primary" id="addBook">+ Kniha</button>
+    <button class="btn" id="importBtn">⤓ Import z tabulky</button>
+    <button class="btn" id="exportJsonBtn" title="Uložit zálohu všech dat do JSON souboru">⬇ Export JSON</button>
+    <button class="btn" id="importJsonBtn" title="Obnovit data ze zálohy JSON">⬆ Import JSON</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="table-wrap">
+    <table class="books">
+      <thead>
+        <tr id="headRow">
+          <th class="no-sort"></th>
+          <th data-sort="kniha">Kniha</th>
+          <th data-sort="autor">Autor</th>
+          <th data-sort="zanr">Žánr</th>
+          <th data-sort="eshop">eShop</th>
+          <th data-sort="stav">Stav</th>
+          <th data-sort="t_ctecka">Čtečka</th>
+          <th data-sort="t_precteno">Přečteno</th>
+          <th data-sort="t_hodnoceni">Hodnocení</th>
+          <th class="no-sort"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="empty" id="emptyMsg" style="display:none">Žádná kniha neodpovídá filtru.</div>
+</main>
+
+<footer class="app-footer">
+  (c) 2026 KeCl v1.5
+</footer>
+
+<!-- ===== MODÁL: KNIHA ===== -->
+<div class="modal-overlay" id="bookModal">
+  <div class="modal">
+    <h2 id="bookModalTitle">Přidat knihu</h2>
+    <div class="form-grid">
+      <div class="field full"><label>Název knihy *</label><input type="text" id="mKniha"></div>
+      <div class="field full"><label>Autor</label><input type="text" id="mAutor"></div>
+      <div class="field"><label>Série</label><input type="text" id="mSerie"></div>
+      <div class="field"><label>Díl</label><input type="text" id="mDil"></div>
+      <div class="field"><label>Žánr</label><input type="text" id="mZanr"></div>
+      <div class="field"><label>Rok vydání</label><input type="number" id="mRok" min="0" placeholder="např. 2015"></div>
+      <div class="field"><label>Počet stran</label><input type="number" id="mStran" min="0"></div>
+      <div class="field"><label>eShop / kde koupeno</label><input type="text" id="mEshop"></div>
+      <div class="field"><label>Stav</label>
+        <select id="mStav"><option value="vlastněno">Vlastněno</option><option value="k nákupu">K nákupu</option></select>
+      </div>
+      <div class="field full"><label>Poznámka (ke knize)</label><input type="text" id="mPozn"></div>
+      <div class="field full">
+        <label>Přebal – URL obrázku</label>
+        <div class="cover-row">
+          <div id="mCoverPrev"></div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+            <input type="url" id="mCover" placeholder="https://…/obalka.jpg">
+            <div class="hint">Tip: na <a href="#" id="mCoverSearch" target="_blank" rel="noopener">Databáze knih</a> najdi knihu → na obálce pravý klik → „Kopírovat adresu obrázku" → vlož sem.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger left" id="mDelete" style="display:none">Smazat knihu</button>
+      <button class="btn" id="mCancel">Zrušit</button>
+      <button class="btn btn-primary" id="mSave">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODÁL: DETAIL KNIHY ===== -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal detail-modal">
+    <div class="detail-head">
+      <div id="dCover"></div>
+      <div class="detail-metahead">
+        <h2 id="dTitle"></h2>
+        <div class="detail-author" id="dAuthor"></div>
+        <div id="dStars" class="detail-stars"></div>
+      </div>
+    </div>
+    <div class="detail-grid" id="dGrid"></div>
+    <div class="field full" style="margin-top:14px">
+      <label>Poznámka čtenáře (<span id="dReaderName"></span>)</label>
+      <textarea id="dNote" placeholder="Poznámka k této knize pro daného čtenáře…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn left" id="dEdit">Upravit knihu</button>
+      <button class="btn" id="dClose">Zavřít</button>
+      <button class="btn btn-primary" id="dSaveNote">Uložit poznámku</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODÁL: SPRÁVA ČTENÁŘŮ ===== -->
+<div class="modal-overlay" id="readersModal">
+  <div class="modal">
+    <h2>Čtenáři</h2>
+    <p class="modal-desc">Přejmenování ani smazání čtenáře nesmaže data ostatních.</p>
+    <ul class="reader-list" id="readerListUI"></ul>
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <input type="text" class="grow" id="newReaderName" placeholder="Jméno nového čtenáře">
+      <button class="btn btn-primary" id="addReaderBtn">Přidat</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="readersClose">Zavřít</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODÁL: IMPORT ===== -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h2>Import z Google tabulky</h2>
+    <p class="modal-desc">Vlož odkaz na <b>publikovanou</b> tabulku ve formátu CSV. V Google Sheets: Soubor → Sdílet → Publikovat na web → vyber list → formát <b>CSV</b> → zkopíruj odkaz sem. Import knihy <b>přidá nebo aktualizuje</b> podle autora+názvu; tvůj tracking (čtečka, přečteno, hodnocení, poznámky) zůstane zachován.</p>
+    <div class="field full"><label>CSV odkaz publikované tabulky</label><input type="url" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?gid=0&single=true&output=csv"></div>
+    <div class="status-line" id="importStatus" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn" id="importClose">Zavřít</button>
+      <button class="btn btn-primary" id="importRun">Načíst a importovat</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODÁL: IMPORT JSON (záloha) ===== -->
+<div class="modal-overlay" id="jsonModal">
+  <div class="modal">
+    <h2>Obnova ze zálohy (JSON)</h2>
+    <p class="modal-desc">Vyber JSON zálohu vytvořenou tlačítkem <b>Export JSON</b>.<br>
+      <b>Přepsat</b> = nahradí veškerá aktuální data obsahem zálohy (nevratné).<br>
+      <b>Sloučit</b> = doplní a aktualizuje knihy podle autora+názvu; existující tracking (čtečka, přečteno, hodnocení, poznámky) zůstane zachován a prázdná pole v záloze nic nepřepíšou.</p>
+    <div class="field full"><label>Soubor zálohy (.json)</label><input type="file" id="jsonFile" accept="application/json,.json"></div>
+    <div class="status-line" id="jsonStatus" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn" id="jsonClose">Zavřít</button>
+      <button class="btn btn-danger" id="jsonReplace">Přepsat</button>
+      <button class="btn btn-primary" id="jsonMerge">Sloučit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODÁL: SYNC ===== -->
+<div class="modal-overlay" id="syncModal">
+  <div class="modal">
+    <h2>Synchronizace (GitHub Gist)</h2>
+    <p class="modal-desc">Data se zrcadlí do <b>soukromého</b> GitHub Gistu, takže je máš na všech zařízeních. Token i Gist ID se ukládají <b>jen v tomto prohlížeči</b> (localStorage), nikam se neposílají. Token je citlivý údaj – chovej se k němu jako k heslu.</p>
+    <div class="field full"><label>GitHub token (classic, oprávnění pouze „gist")</label><input type="password" id="syncToken" placeholder="ghp_…" autocomplete="off"></div>
+    <div class="field full"><label>Gist ID (na prvním zařízení nech prázdné)</label><input type="text" id="syncGistId" placeholder="např. 3f7c… (necháš prázdné → vytvoří se nový)"></div>
+    <div class="status-line" id="syncStatus"></div>
+    <div id="gistIdReveal" style="display:none; margin-top:10px;">
+      <div class="hint">Tvé Gist ID – zkopíruj ho na další zařízení:</div>
+      <div class="code-box" id="gistIdText"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger left" id="syncDisconnect" style="display:none">Odpojit</button>
+      <button class="btn" id="syncClose">Zavřít</button>
+      <button class="btn" id="syncNow" style="display:none">Synchronizovat teď</button>
+      <button class="btn btn-primary" id="syncConnect">Vytvořit / Připojit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ČTENÁŘ – (c) 2026 KeCl v1.5
+   Single-file HTML app. Data v localStorage + volitelná
+   synchronizace přes GitHub Gist (last-write-wins).
+   ============================================================ */
+(function () {
+  "use strict";
+
+  const APP_VERSION = "1.5";
+  const LS_DATA    = "ctenar-data";
+  const LS_CFG     = "ctenar-gistcfg";
+  const LS_UPDATED = "ctenar-updatedAt";
+  const LS_READER  = "ctenar-active-reader"; // jen UI, nesynchronizuje se
+  const GIST_FILE  = "ctenar-sync.json";
+  const GIST_API   = "https://api.github.com/gists";
+
+  // ---- SEED (výchozí katalog z Google tabulky) --------------
+  const SEED_BOOKS = /*__SEED__*/[{"id":"b1","autor":"Nesbø, Jo","kniha":"Netopýr","serie":"Harry Hole","dil":"1","zanr":"Krimi","pocetStran":"408","coverUrl":"https://www.databazeknih.cz/img/books/14_/145158/netopyr-tZy-145158.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2015-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2013"},{"id":"b2","autor":"Nesbø, Jo","kniha":"Švábi","serie":"Harry Hole","dil":"2","zanr":"Krimi","pocetStran":"392","coverUrl":"https://www.databazeknih.cz/img/books/16_/165557/svabi-eEl-165557.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2015-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2013"},{"id":"b3","autor":"Nesbø, Jo","kniha":"Červenka","serie":"Harry Hole","dil":"3","zanr":"Krimi","pocetStran":"443","coverUrl":"https://www.databazeknih.cz/img/books/74_/74040/cervenka-nese-smrt.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2015-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2005"},{"id":"b4","autor":"Nesbø, Jo","kniha":"Nemesis","serie":"Harry Hole","dil":"4","zanr":"Krimi","pocetStran":"504","coverUrl":"https://www.databazeknih.cz/img/books/69_/69463/nemesis-saO-69463.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2016-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2011"},{"id":"b5","autor":"Nesbø, Jo","kniha":"Pentagram","serie":"Harry Hole","dil":"5","zanr":"Krimi","pocetStran":"449","coverUrl":"https://www.databazeknih.cz/img/books/87_/87850/harry-hole-pentagram-6wk-87850.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2016-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2011"},{"id":"b6","autor":"Nesbø, Jo","kniha":"Spasitel","serie":"Harry Hole","dil":"6","zanr":"Krimi","pocetStran":"528","coverUrl":"https://www.databazeknih.cz/img/books/10_/109233/harry-hole-spasitel-NZK-109233.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2016-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2012"},{"id":"b7","autor":"Nesbø, Jo","kniha":"Sněhulák","serie":"Harry Hole","dil":"7","zanr":"Krimi","pocetStran":"510","coverUrl":"https://www.databazeknih.cz/img/books/13_/130267/snehulak-2rS-130267.png","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2017-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2012"},{"id":"b8","autor":"Nesbø, Jo","kniha":"Levhart","serie":"Harry Hole","dil":"8","zanr":"Krimi","pocetStran":"722","coverUrl":"https://www.databazeknih.cz/img/books/19_/197211/levhart-azo-197211.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2017-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2013"},{"id":"b9","autor":"Nesbø, Jo","kniha":"Přízrak","serie":"Harry Hole","dil":"9","zanr":"Krimi","pocetStran":"518","coverUrl":"https://www.databazeknih.cz/img/books/19_/193106/harry-hole-prizrak-3qP-193106.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2018-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2014"},{"id":"b10","autor":"Nesbø, Jo","kniha":"Policie","serie":"Harry Hole","dil":"10","zanr":"Krimi","pocetStran":"616","coverUrl":"https://www.databazeknih.cz/img/books/19_/193103/harry-hole-policie-pLm-193103.jpg","eshop":"eReading","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2018-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2015"},{"id":"b11","autor":"Nesbø, Jo","kniha":"Žízeň","serie":"Harry Hole","dil":"11","zanr":"Krimi","pocetStran":"598","coverUrl":"https://www.databazeknih.cz/img/books/31_/312891/zizen-A5a-312891.jpg","eshop":"A - 179","stav":"k nákupu","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2019-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2017"},{"id":"b12","autor":"Nesbø, Jo","kniha":"Nůž","serie":"Harry Hole","dil":"12","zanr":"Krimi","pocetStran":"584","coverUrl":"https://www.databazeknih.cz/img/books/40_/407982/nuz-Lx9-407982.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"30.12.2022","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2023-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2019"},{"id":"b13","autor":"Nesbø, Jo","kniha":"Zatmění","serie":"Harry Hole","dil":"13","zanr":"Krimi","pocetStran":"544","coverUrl":"https://www.databazeknih.cz/img/books/50_/509363/zatmeni-63fdec3e23127.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"18.6.2023","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2023-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2023"},{"id":"b14","autor":"Pecinovský, Josef","kniha":"Plástev jedu","serie":"Plástev","dil":"1","zanr":"Sci-fi","pocetStran":"80","coverUrl":"https://www.databazeknih.cz/img/books/34_/34289/plastev-jedu-snW-34289.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2015-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"1990"},{"id":"b15","autor":"Pecinovský, Josef","kniha":"Děti plástve - část první","serie":"Plástev","dil":"2","zanr":"Sci-fi","pocetStran":"280","coverUrl":"https://www.databazeknih.cz/img/books/20_/207294/plastev-deti-plastve-1-99y-207294.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2015-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2014"},{"id":"b16","autor":"Pecinovský, Josef","kniha":"Děti plástve - část druhá","serie":"Plástev","dil":"3","zanr":"Sci-fi","pocetStran":"280","coverUrl":"https://www.databazeknih.cz/img/books/20_/207293/plastev-deti-plastve-2-MGq-207293.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2015-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2014"},{"id":"b17","autor":"Pecinovský, Josef","kniha":"Plástev v ohrožení","serie":"Plástev","dil":"4","zanr":"Sci-fi","pocetStran":"336","coverUrl":"https://www.databazeknih.cz/img/books/22_/227608/plastev-v-ohrozeni-O54-227608.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2017-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2014"},{"id":"b18","autor":"Pecinovský, Josef","kniha":"Válka pláství","serie":"Plástev","dil":"5","zanr":"Sci-fi","pocetStran":"360","coverUrl":"https://www.databazeknih.cz/img/books/24_/240173/plastev-valka-plastvi-RDw-240173.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b19","autor":"Lebbon, Tim","kniha":"Vetřelec: Probuzení","serie":"Vetřelec","dil":"1","zanr":"Sci-fi","pocetStran":"336","coverUrl":"https://www.databazeknih.cz/img/books/23_/233359/vetrelec-probuzeni-ugs-233359.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2016-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2015"},{"id":"b20","autor":"Moore, James A.","kniha":"Vetřelec: Odplata","serie":"Vetřelec","dil":"2","zanr":"Sci-fi","pocetStran":"336","coverUrl":"https://www.databazeknih.cz/img/books/25_/252388/vetrelec-vetrelec-odplata-m5g-252388.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b21","autor":"Golden, Christopher","kniha":"Vetřelec: Peklo","serie":"Vetřelec","dil":"3","zanr":"Sci-fi","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/25_/254316/vetrelec-peklo-254316.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b22","autor":"Herbert, Frank","kniha":"Duna","serie":"Duna","dil":"1","zanr":"Sci-fi","pocetStran":"588","coverUrl":"https://www.databazeknih.cz/img/books/29_/29765/duna-2V7-29765.png","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2021-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"1988"},{"id":"b23","autor":"Herbert, Frank","kniha":"Spasitel Duny","serie":"Duna","dil":"2","zanr":"Sci-fi","pocetStran":"210","coverUrl":"https://www.databazeknih.cz/img/books/15_/15785/spasitel-duny-Qh2-15785.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"1993"},{"id":"b24","autor":"Herbert, Frank","kniha":"Děti Duny","serie":"Duna","dil":"3","zanr":"Sci-fi","pocetStran":"432","coverUrl":"https://www.databazeknih.cz/img/books/29_/2958/deti-duny-YhA-2958.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2007"},{"id":"b25","autor":"Herbert, Frank","kniha":"Božský imperátor Duny","serie":"Duna","dil":"4","zanr":"Sci-fi","pocetStran":"464","coverUrl":"https://www.databazeknih.cz/img/books/15_/15838/bozsky-imperator-duny-CYK-15838.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2001"},{"id":"b26","autor":"Herbert, Frank","kniha":"Kacíři Duny","serie":"Duna","dil":"5","zanr":"Sci-fi","pocetStran":"543","coverUrl":"https://www.databazeknih.cz/img/books/32_/32975/kaciri-duny-2W2-32975.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"1997"},{"id":"b27","autor":"Herbert, Brian; Anderson, Kevin J.","kniha":"Sesterstvo Duny","serie":"Duna","dil":"6","zanr":"Sci-fi","pocetStran":"640","coverUrl":"https://www.databazeknih.cz/img/books/14_/141172/sesterstvo-duny-DiL-141172.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2012"},{"id":"b28","autor":"Herbert, Brian; Anderson, Kevin J.","kniha":"Píseční červi Duny","serie":"Duna","dil":"8","zanr":"","pocetStran":"568","coverUrl":"https://www.databazeknih.cz/img/books/29_/297489/pisecni-cervi-duny-9wn-297489.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b29","autor":"Herbert, Brian; Anderson, Kevin J.","kniha":"Mentati Duny","serie":"Duna","dil":"","zanr":"","pocetStran":"608","coverUrl":"https://www.databazeknih.cz/img/books/20_/208621/mentati-duny-sbr-208621.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b30","autor":"Kyša, Leoš","kniha":"Poutník z Mohameda","serie":"","dil":"1","zanr":"Sci-fi","pocetStran":"264","coverUrl":"https://www.databazeknih.cz/img/books/29_/29852/poutnik-z-mohameda-WEv-29852.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2015-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2009"},{"id":"b31","autor":"Kyša, Leoš","kniha":"Alláhův hněv","serie":"","dil":"2","zanr":"Sci-fi","pocetStran":"224","coverUrl":"https://www.databazeknih.cz/img/books/78_/78072/allahuv-hnev-X6w-78072.png","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2011"},{"id":"b32","autor":"Laybourne, Emmy","kniha":"Monument 14","serie":"Monument 14","dil":"1","zanr":"Sci-fi","pocetStran":"296","coverUrl":"https://www.databazeknih.cz/img/books/16_/161559/monument-14-monument-14-DiI-161559.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b33","autor":"Laybourne, Emmy","kniha":"Monument 14 - Nebe v plamenech","serie":"Monument 14","dil":"2","zanr":"Sci-fi","pocetStran":"238","coverUrl":"https://www.databazeknih.cz/img/books/16_/163876/monument-14-nebe-v-p.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b34","autor":"Laybourne, Emmy","kniha":"Monument 14 - Cesta Pustinou","serie":"Monument 14","dil":"3","zanr":"Sci-fi","pocetStran":"306","coverUrl":"https://www.databazeknih.cz/img/books/20_/207251/monument-14-cesta-pustinou-cvL-207251.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b35","autor":"Ohlssonová, Kristina","kniha":"Nechtění","serie":"Fredrika Bergmanová a Alex Recht","dil":"1","zanr":"Krimi","pocetStran":"419","coverUrl":"https://www.databazeknih.cz/img/books/15_/152778/fredrika-bergmanova-a-alex-recht-ne-8LH-152778.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b36","autor":"Ohlssonová, Kristina","kniha":"Sedmikrásky","serie":"Fredrika Bergmanová a Alex Recht","dil":"2","zanr":"Krimi","pocetStran":"408","coverUrl":"https://www.databazeknih.cz/img/books/17_/175998/fredrika-bergmanova-a-alex-recht-se-HZJ-175998.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b37","autor":"Ohlssonová, Kristina","kniha":"Andělé strážní","serie":"Fredrika Bergmanová a Alex Recht","dil":"3","zanr":"Krimi","pocetStran":"512","coverUrl":"https://www.databazeknih.cz/img/books/19_/191609/fredrika-bergmanova-a-alex-recht-andele-strazni.png","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b38","autor":"Ohlssonová, Kristina","kniha":"Oběti ráje","serie":"Fredrika Bergmanová a Alex Recht","dil":"4","zanr":"Krimi","pocetStran":"407","coverUrl":"https://www.databazeknih.cz/img/books/22_/221139/fredrika-bergmanova-a-alex-recht-ob-ROJ-221139.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b39","autor":"Ohlssonová, Kristina","kniha":"Davidovy hvězdy","serie":"Fredrika Bergmanová a Alex Recht","dil":"5","zanr":"Krimi","pocetStran":"520","coverUrl":"https://www.databazeknih.cz/img/books/24_/245459/davidovy-hvezdy-245459.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b40","autor":"Pavlovský, Jiří","kniha":"Kladivo na čaroděje 01: Magie pro každého","serie":"Kladivo na čaroděje","dil":"1","zanr":"Akční fantastika","pocetStran":"200","coverUrl":"https://www.databazeknih.cz/img/books/13_/137156/magie-pro-kazdeho-leV-137156.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2012"},{"id":"b41","autor":"Pavlovský, Jiří","kniha":"Kladivo na čaroděje 02: Město mrtvých","serie":"Kladivo na čaroděje","dil":"2","zanr":"Akční fantastika","pocetStran":"144","coverUrl":"https://www.databazeknih.cz/img/books/13_/138152/mesto-mrtvych-E7r-138152.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2012"},{"id":"b42","autor":"Nečas, Ondřej S.","kniha":"Kladivo na čaroděje 03: Kruté stroje","serie":"Kladivo na čaroděje","dil":"3","zanr":"Akční fantastika","pocetStran":"184","coverUrl":"https://www.databazeknih.cz/img/books/15_/156078/krute-stroje-J7j-156078.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b43","autor":"Fabian, Dušan D.","kniha":"Kladivo na čaroděje 04: Sonáta pro Azazela","serie":"Kladivo na čaroděje","dil":"4","zanr":"Akční fantastika","pocetStran":"168","coverUrl":"https://www.databazeknih.cz/img/books/16_/165768/sonata-pro-azazela-Hq6-165768.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b44","autor":"Pavlovský, Jiří","kniha":"Kladivo na čaroděje 05: Výtah do pekla","serie":"Kladivo na čaroděje","dil":"5","zanr":"Akční fantastika","pocetStran":"152","coverUrl":"https://www.databazeknih.cz/img/books/17_/178220/vytah-do-pekla-YQ0-178220.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b45","autor":"Mařík, Jakub","kniha":"Kladivo na čaroděje 06: Drsné sny","serie":"Kladivo na čaroděje","dil":"6","zanr":"Akční fantastika","pocetStran":"160","coverUrl":"https://www.databazeknih.cz/img/books/20_/200951/drsne-sny-200951.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b46","autor":"Nečas, Ondřej S.","kniha":"Kladivo na čaroděje 07: Síť přízraků","serie":"Kladivo na čaroděje","dil":"7","zanr":"Akční fantastika","pocetStran":"182","coverUrl":"https://www.databazeknih.cz/img/books/21_/210381/sit-prizraku-210381.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b47","autor":"Blake, Kendare","kniha":"Anna krví oděná","serie":"Anna Korlovová","dil":"1","zanr":"Fantasy","pocetStran":"272","coverUrl":"https://www.databazeknih.cz/img/books/14_/143093/anna-series-anna-krvi-odena-T36-143093.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b48","autor":"Blake, Kendare","kniha":"Dívka z nočních můr","serie":"Anna Korlovová","dil":"2","zanr":"Fantasy","pocetStran":"288","coverUrl":"https://www.databazeknih.cz/img/books/14_/143092/anna-series-divka-z--143092.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b49","autor":"Shannonová, Samantha","kniha":"Kostičas","serie":"Kostičas","dil":"1","zanr":"Fantasy","pocetStran":"480","coverUrl":"https://www.databazeknih.cz/img/books/19_/193478/kosticas-xn0-193478.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b50","autor":"Shannonová, Samantha","kniha":"Vidořád","serie":"Kostičas","dil":"2","zanr":"Fantasy","pocetStran":"519","coverUrl":"https://www.databazeknih.cz/img/books/24_/247901/vidorad-LZd-247901.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b51","autor":"Kotleta, František","kniha":"Perunova krev I.","serie":"Perunova krev","dil":"1","zanr":"Akční fantastika","pocetStran":"288","coverUrl":"https://www.databazeknih.cz/img/books/17_/179587/perunova-krev-i-BRt-179587.png","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b52","autor":"Kotleta, František","kniha":"Perunova krev II.","serie":"Perunova krev","dil":"2","zanr":"Akční fantastika","pocetStran":"304","coverUrl":"https://www.databazeknih.cz/img/books/20_/204194/perunova-krev-ii-jQN-204194.png","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b53","autor":"Vopěnka, Martin","kniha":"Nová planeta","serie":"","dil":"","zanr":"Sci-fi","pocetStran":"624","coverUrl":"https://www.databazeknih.cz/img/books/26_/260201/nova-planeta-260201.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b54","autor":"Ryan, Anthony","kniha":"Píseň krve","serie":"Stín krkavce","dil":"1","zanr":"Fantasy","pocetStran":"624","coverUrl":"https://www.databazeknih.cz/img/books/20_/207398/pisen-krve-cs2-207398.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2016-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2014"},{"id":"b55","autor":"Ryan, Anthony","kniha":"Pán věže","serie":"Stín krkavce","dil":"2","zanr":"Fantasy","pocetStran":"672","coverUrl":"https://www.databazeknih.cz/img/books/24_/248279/stin-krkavce-pan-veze-5xg-248279.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2016-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2015"},{"id":"b56","autor":"Ryan, Anthony","kniha":"Královna ohně","serie":"Stín krkavce","dil":"3","zanr":"Fantasy","pocetStran":"688","coverUrl":"https://www.databazeknih.cz/img/books/29_/290488/kralovna-ohne-gHQ-290488.jpg","eshop":"A - 125","stav":"k nákupu","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2019-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2016"},{"id":"b57","autor":"Weeks, Brent","kniha":"Černý arcimág","serie":"Světlonoš","dil":"1","zanr":"Fantasy","pocetStran":"512","coverUrl":"https://www.databazeknih.cz/img/books/17_/170301/cerny-arcimag-UBL-170301.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b58","autor":"Weeks, Brent","kniha":"Oslnivá čepel","serie":"Světlonoš","dil":"2","zanr":"Fantasy","pocetStran":"640","coverUrl":"https://www.databazeknih.cz/img/books/18_/188492/oslniva-cepel-r3k-188492.jpg","eshop":"","stav":"k nákupu","poznamka":"Koupit, podle kvality 1. dílu","tracking":{},"rokVydani":"2014"},{"id":"b59","autor":"Weeks, Brent","kniha":"Oko temnoty","serie":"Světlonoš","dil":"3","zanr":"Fantasy","pocetStran":"688","coverUrl":"https://www.databazeknih.cz/img/books/26_/265189/oko-temnoty-rhf-265189.jpg","eshop":"","stav":"k nákupu","poznamka":"Koupit, podle kvality 1. dílu","tracking":{},"rokVydani":"2015"},{"id":"b60","autor":"Franklin, Ariana","kniha":"Vykladačka smrti","serie":"Dobrodružství lékařky Adélie","dil":"1","zanr":"Krimi","pocetStran":"400","coverUrl":"https://www.databazeknih.cz/img/books/26_/26713/vykladacka-smrti-ImE-26713.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2009"},{"id":"b61","autor":"Franklin, Ariana","kniha":"Labyrintem smrti","serie":"Dobrodružství lékařky Adélie","dil":"2","zanr":"Krimi","pocetStran":"368","coverUrl":"https://www.databazeknih.cz/img/books/44_/44953/labyrintem-smrti-UDy-44953.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2010"},{"id":"b62","autor":"Franklin, Ariana","kniha":"Relikvie mrtvých","serie":"Dobrodružství lékařky Adélie","dil":"3","zanr":"Krimi","pocetStran":"360","coverUrl":"https://www.databazeknih.cz/img/books/46_/46819/relikvie-mrtvych-rKE-46819.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2011"},{"id":"b63","autor":"Franklin, Ariana","kniha":"Vrahova modlitba","serie":"Dobrodružství lékařky Adélie","dil":"4","zanr":"Krimi","pocetStran":"352","coverUrl":"https://www.databazeknih.cz/img/books/73_/73992/vrahova-modlitba-JYb-73992.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2011"},{"id":"b64","autor":"Nesbø, Jo","kniha":"Syn","serie":"","dil":"1","zanr":"Krimi","pocetStran":"499","coverUrl":"https://www.databazeknih.cz/img/books/26_/264687/syn-264687.jpeg","eshop":"eReading","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b65","autor":"Nesbø, Jo","kniha":"Lovci hlav","serie":"","dil":"1","zanr":"Krimi","pocetStran":"256","coverUrl":"https://www.databazeknih.cz/img/books/93_/93222/lovci-hlav-CYP-93222.jpg","eshop":"eReading","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2011"},{"id":"b66","autor":"Neff, Ondřej","kniha":"Tma","serie":"","dil":"1","zanr":"Sci-fi","pocetStran":"264","coverUrl":"https://www.databazeknih.cz/img/books/11_/11756/tma-11756.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{"taťka":{"veCtecce":true,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"1998"},{"id":"b67","autor":"Nesbø, Jo","kniha":"Krev na sněhu","serie":"Krev na sněhu","dil":"1","zanr":"Krimi","pocetStran":"151","coverUrl":"https://www.databazeknih.cz/img/books/23_/231260/krev-na-snehu-itA-231260.png","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b68","autor":"Nesbø, Jo","kniha":"Půlnoční slunce","serie":"Krev na sněhu","dil":"2","zanr":"Krimi","pocetStran":"216","coverUrl":"https://www.databazeknih.cz/img/books/26_/269587/pulnocni-slunce.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b69","autor":"Kadlečková, Vilma","kniha":"Mycelium I","serie":"Mycelium","dil":"1","zanr":"Sci-fi","pocetStran":"316","coverUrl":"https://www.databazeknih.cz/img/books/16_/162124/jantarove-oci-S20-162124.jpeg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2017-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2013"},{"id":"b70","autor":"Kadlečková, Vilma","kniha":"Mycelium II","serie":"Mycelium","dil":"2","zanr":"Sci-fi","pocetStran":"332","coverUrl":"https://www.databazeknih.cz/img/books/18_/181322/led-pod-kuzi-E4q-181322.jpeg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2017-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2013"},{"id":"b71","autor":"Kadlečková, Vilma","kniha":"Mycelium III","serie":"Mycelium","dil":"3","zanr":"Sci-fi","pocetStran":"424","coverUrl":"https://www.databazeknih.cz/img/books/20_/203673/pad-do-temnot-ZAw-203673.jpeg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2018-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2014"},{"id":"b72","autor":"Bjork, Samuel","kniha":"V lese visí anděl","serie":"","dil":"1","zanr":"Krimi","pocetStran":"384","coverUrl":"https://www.databazeknih.cz/img/books/26_/262107/holger-munch-v-lese-visi-andel-U0X-262107.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b73","autor":"Bjork, Samuel","kniha":"Sova","serie":"","dil":"2","zanr":"","pocetStran":"400","coverUrl":"https://www.databazeknih.cz/img/books/30_/300909/sova-fMG-300909.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b74","autor":"Viewegh, Michal, Lasica Milan","kniha":"Když ti to udělá radost","serie":"","dil":"","zanr":"","pocetStran":"122","coverUrl":"https://www.databazeknih.cz/img/books/32_/325800/kdyz-ti-to-udela-radost.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b75","autor":"Newman, Peter","kniha":"Tulák","serie":"Tulák","dil":"","zanr":"","pocetStran":"375","coverUrl":"https://www.databazeknih.cz/img/books/27_/275145/tulak-z3c-275145.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b76","autor":"Maas Sarah J.","kniha":"Skleněný trůn","serie":"Skleněný trůn","dil":"1","zanr":"Fantasy","pocetStran":"392","coverUrl":"https://www.databazeknih.cz/img/books/23_/235352/skleneny-trun-rl8-235352.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b77","autor":"Maas Sarah J.","kniha":"Půlnoční koruna","serie":"Skleněný trůn","dil":"2","zanr":"Fantasy","pocetStran":"400","coverUrl":"https://www.databazeknih.cz/img/books/25_/259919/pulnocni-koruna-CO7-259919.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b78","autor":"Maas Sarah J.","kniha":"Dědička ohně","serie":"Skleněný trůn","dil":"3","zanr":"Fantasy","pocetStran":"536","coverUrl":"https://www.databazeknih.cz/img/books/28_/281807/dedicka-ohne-wNH-281807.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b79","autor":"Maas Sarah J.","kniha":"Královna stínů","serie":"Skleněný trůn","dil":"4","zanr":"Fantasy","pocetStran":"656","coverUrl":"https://www.databazeknih.cz/img/books/28_/289317/kralovna-stinu-CO8-289317.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b80","autor":"Maas Sarah J.","kniha":"Krvavé ostří","serie":"Skleněný trůn","dil":"0,5","zanr":"Fantasy","pocetStran":"408","coverUrl":"https://www.databazeknih.cz/img/books/32_/322789/krvave-ostri-L4b-322789.jpg","eshop":"","stav":"k nákupu","poznamka":"Koupit","tracking":{},"rokVydani":"2017"},{"id":"b81","autor":"Maas Sarah J.","kniha":"Říše bouří","serie":"","dil":"5","zanr":"","pocetStran":"688","coverUrl":"https://www.databazeknih.cz/img/books/34_/346400/rise-bouri-4tT-346400.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2017"},{"id":"b82","autor":"Maas Sarah J.","kniha":"Dvůr trnů a růží","serie":"Dvůr trnů a růží","dil":"1","zanr":"Fantasy","pocetStran":"440","coverUrl":"https://www.databazeknih.cz/img/books/28_/286248/dvur-trnu-a-ruzi-5Mh-286248.jpg","eshop":"","stav":"k nákupu","poznamka":"Koupit 2, 3, 4, ... - dle kval.","tracking":{},"rokVydani":"2016"},{"id":"b83","autor":"Maas Sarah J.","kniha":"Dvůr mlhy a hněvu","serie":"","dil":"2","zanr":"","pocetStran":"664","coverUrl":"https://www.databazeknih.cz/img/books/30_/306865/dvur-mlhy-a-hnevu-7Ms-306865.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2017"},{"id":"b84","autor":"Stehlíková, Petra","kniha":"Naslouchač","serie":"","dil":"1","zanr":"Sci-fi","pocetStran":"374","coverUrl":"https://www.databazeknih.cz/img/books/27_/275144/naslouchac-OED-275144.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b85","autor":"Stehlíková, Petra","kniha":"Faja","serie":"","dil":"2","zanr":"","pocetStran":"440","coverUrl":"https://www.databazeknih.cz/img/books/34_/342817/faja-mmt-342817.jpeg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2017"},{"id":"b86","autor":"Stehlíková, Petra","kniha":"Nasterea","serie":"","dil":"3","zanr":"","pocetStran":"501","coverUrl":"https://www.databazeknih.cz/img/books/41_/410344/nasterea-8G0-410344.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2021"},{"id":"b87","autor":"Martin, George R. R.","kniha":"Divoké karty","serie":"","dil":"","zanr":"","pocetStran":"376","coverUrl":"https://www.databazeknih.cz/img/books/20_/206715/wild-cards-divoke-karty-1-SGj-206715.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b88","autor":"Asher, Neal","kniha":"Stín škorpiona","serie":"Neal Asher / Řád?","dil":"?","zanr":"Sci-fi","pocetStran":"240","coverUrl":"https://www.databazeknih.cz/img/books/16_/167412/stin-skorpiona-167412.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2013"},{"id":"b89","autor":"Asher, Neal","kniha":"Hraniční válka","serie":"Neal Asher / Řád?","dil":"?","zanr":"Sci-fi","pocetStran":"368","coverUrl":"https://www.databazeknih.cz/img/books/20_/201954/agent-cormac-hranicni-valka-ZCK-201954.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b90","autor":"Asher, Neal","kniha":"Technik","serie":"Neal Asher / Řád?","dil":"?","zanr":"Sci-fi","pocetStran":"368","coverUrl":"https://www.databazeknih.cz/img/books/24_/248337/technik-gUN-248337.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b91","autor":"Asher, Neal","kniha":"Blábol","serie":"Neal Asher / Řád?","dil":"?","zanr":"Sci-fi","pocetStran":"264","coverUrl":"https://www.databazeknih.cz/img/books/30_/304425/blabol-a-jine-pribehy-xiv-304425.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b92","autor":"Roth, Veronica","kniha":"Divergence","serie":"Povstalecká trilogie","dil":"1","zanr":"Sci-fi","pocetStran":"344","coverUrl":"https://www.databazeknih.cz/img/books/11_/117803/povstalecka-trilogie-divergence-gVh-117803.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2012"},{"id":"b93","autor":"Roth, Veronica","kniha":"Rezistence","serie":"Povstalecká trilogie","dil":"2","zanr":"Sci-fi","pocetStran":"352","coverUrl":"https://www.databazeknih.cz/img/books/13_/134258/rezistence-134258.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2012"},{"id":"b94","autor":"Roth, Veronica","kniha":"Aliance","serie":"Povstalecká trilogie","dil":"3","zanr":"Sci-fi","pocetStran":"366","coverUrl":"https://www.databazeknih.cz/img/books/18_/182922/povstalecka-trilogie-aliance-7aP-182922.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b95","autor":"Roth, Veronica","kniha":"Čtyřka","serie":"Povstalecká trilogie","dil":"4","zanr":"Sci-fi","pocetStran":"192","coverUrl":"https://www.databazeknih.cz/img/books/20_/206214/ctyrka-divergentni-povidky-am8-206214.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b96","autor":"Asimov, Isaac","kniha":"Nadace","serie":"Nadace","dil":"1","zanr":"Sci-fi","pocetStran":"204","coverUrl":"https://www.databazeknih.cz/img/books/15_/15829/nadace-nXz-15829.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2009"},{"id":"b97","autor":"Riddle, A. G.","kniha":"Atlantský gen","serie":"Tajemství původu","dil":"1","zanr":"Sci-fi","pocetStran":"440","coverUrl":"https://www.databazeknih.cz/img/books/24_/247384/tajemstvi-puvodu-atlantsky-gen-dzc-247384.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b98","autor":"Riddle, A. G.","kniha":"Atlantský mor","serie":"Tajemství původu","dil":"2","zanr":"Sci-fi","pocetStran":"368","coverUrl":"https://www.databazeknih.cz/img/books/25_/258391/tajemstvi-puvodu-atlantsky-mor-Tep-258391.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b99","autor":"Riddle, A. G.","kniha":"Atlantský svět","serie":"Tajemství původu","dil":"3","zanr":"Sci-fi","pocetStran":"264","coverUrl":"https://www.databazeknih.cz/img/books/26_/264070/atlantsky-svet-fcc-264070.png","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b100","autor":"Martin, George R. R.","kniha":"Rytíř Sedmi království","serie":"","dil":"","zanr":"Fantasy","pocetStran":"280","coverUrl":"https://www.databazeknih.cz/img/books/21_/219326/rytir-sedmi-kralovstvi.png","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b101","autor":"Yancey, Rick","kniha":"Pátá vlna","serie":"Pátá vlna","dil":"1","zanr":"Sci-fi","pocetStran":"448","coverUrl":"https://www.databazeknih.cz/img/books/16_/163879/the-fifth-wave-pata-vlna-ypk-163879.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2017-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2013"},{"id":"b102","autor":"Yancey, Rick","kniha":"Nekonečné moře","serie":"Pátá vlna","dil":"2","zanr":"Sci-fi","pocetStran":"304","coverUrl":"https://www.databazeknih.cz/img/books/24_/249803/nekonecne-more-5CU-249803.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2017-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2015"},{"id":"b103","autor":"Yancey, Rick","kniha":"Poslední hvězda","serie":"Pátá vlna","dil":"3","zanr":"Sci-fi","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/28_/283792/posledni-hvezda-ewN-283792.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b104","autor":"Campbell, John","kniha":"Neochvějný","serie":"Ztracená flotila","dil":"1","zanr":"Sci-fi","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/26_/26793/neochvejny-26793.jpg","eshop":"Palmknihy","stav":"vlastněno","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2017-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2009"},{"id":"b105","autor":"Campbell, John","kniha":"Smělý","serie":"Ztracená flotila","dil":"2","zanr":"Sci-fi","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/46_/46027/smely-46027.jpg","eshop":"Palm - 129","stav":"k nákupu","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2018-12-31","hodnoceni":0,"poznamka":""},"taťka":{"veCtecce":false,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"2010"},{"id":"b106","autor":"Campbell, John","kniha":"Odvážný","serie":"Ztracená flotila","dil":"3","zanr":"Sci-fi","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/92_/92655/odvazny-7Op-92655.jpg","eshop":"Palm - 65 (50%)","stav":"k nákupu","poznamka":"29.7.2018 WTF chybi","tracking":{},"rokVydani":"2011"},{"id":"b107","autor":"Campbell, John","kniha":"Chrabrý","serie":"Ztracená flotila","dil":"4","zanr":"Sci-fi","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/12_/122381/ztracena-flotila-chr-122381.jpg","eshop":"Palm - 65 (50%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{"taťka":{"veCtecce":false,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"2012"},{"id":"b108","autor":"Campbell, John","kniha":"Neúprosný","serie":"Ztracená flotila","dil":"5","zanr":"Sci-fi","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/13_/133076/neuprosny-Ggd-133076.jpg","eshop":"Palm - 65 (50%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{"taťka":{"veCtecce":false,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"2012"},{"id":"b109","autor":"Campbell, John","kniha":"Vítězný","serie":"Ztracená flotila","dil":"6","zanr":"Sci-fi","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/15_/158382/vitezny-nb6-158382.jpg","eshop":"Palm - 65 (50%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{"taťka":{"veCtecce":false,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"2013"},{"id":"b110","autor":"Campbell, John","kniha":"Bitevník","serie":"Ztracená flotila, za hranicí","dil":"1","zanr":"","pocetStran":"288","coverUrl":"https://www.databazeknih.cz/img/books/21_/217531/za-hranici-1-bitevnik-ztracena-flot-8OE-217531.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b111","autor":"Campbell, John","kniha":"Ochránce","serie":"Ztracená flotila, za hranicí","dil":"2","zanr":"","pocetStran":"304","coverUrl":"https://www.databazeknih.cz/img/books/22_/225521/ochrance-225521.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b112","autor":"Campbell, John","kniha":"Tanečník","serie":"Ztracená flotila, za hranicí","dil":"3","zanr":"","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/23_/237247/za-hranici-tanecnik-KlI-237247.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b113","autor":"Campbell, John","kniha":"Dvojník","serie":"Ztracená flotila, za hranicí","dil":"4","zanr":"","pocetStran":"304","coverUrl":"https://www.databazeknih.cz/img/books/24_/249653/dvojnik-0zB-249653.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b114","autor":"Campbell, John","kniha":"Leviatan","serie":"Ztracená flotila, za hranicí","dil":"5","zanr":"","pocetStran":"256","coverUrl":"https://www.databazeknih.cz/img/books/28_/288113/leviatan-i9K-288113.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b115","autor":"Kotouč, Jan","kniha":"Příliš blízké setkání","serie":"Sektor Hirano","dil":"0","zanr":"Sci-fi","pocetStran":"224","coverUrl":"https://www.databazeknih.cz/img/books/59_/59243/prilis-blizke-setkani-fHp-59243.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2010"},{"id":"b116","autor":"Kotouč, Jan","kniha":"Pokračování diplomacie","serie":"Sektor Hirano","dil":"1","zanr":"Sci-fi","pocetStran":"356","coverUrl":"https://www.databazeknih.cz/img/books/85_/85015/pokracovani-diplomacie-45h-85015.png","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2009"},{"id":"b117","autor":"Kotouč, Jan","kniha":"Tristanská občanská válka","serie":"Sektor Hirano","dil":"2","zanr":"Sci-fi","pocetStran":"512","coverUrl":"https://www.databazeknih.cz/img/books/49_/496180/tristanska-obcanska-valka-ZQy-496180.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2022"},{"id":"b118","autor":"Kotouč, Jan","kniha":"Volání do zbraně","serie":"Sektor Hirano","dil":"3","zanr":"Sci-fi","pocetStran":"350","coverUrl":"https://www.databazeknih.cz/img/books/38_/386937/volani-do-zbrane-11Z-386937.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b119","autor":"Kotouč, Jan","kniha":"Na prahu očistce","serie":"Sektor Hirano","dil":"4","zanr":"Sci-fi","pocetStran":"386","coverUrl":"https://www.databazeknih.cz/img/books/32_/324188/na-prahu-ocistce-e8A-324188.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b120","autor":"Kotouč, Jan","kniha":"Bitva o Sinaj","serie":"Sektor Hirano","dil":"5","zanr":"Sci-fi","pocetStran":"404","coverUrl":"https://www.databazeknih.cz/img/books/25_/250121/bitva-o-sinaj-250121.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b121","autor":"Kotouč, Jan","kniha":"Simeral v plamenech","serie":"Sektor Hirano","dil":"6","zanr":"Sci-fi","pocetStran":"368","coverUrl":"https://www.databazeknih.cz/img/books/28_/288501/simeral-v-plamenech-zqH-288501.jpg","eshop":"Palm - 75 (50%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2016"},{"id":"b122","autor":"Kotouč, Jan","kniha":"Cíl: Kasimir","serie":"Sektor Hirano","dil":"7","zanr":"Sci-fi","pocetStran":"352","coverUrl":"https://www.databazeknih.cz/img/books/35_/359774/cil-kasimir-tZ9-359774.jpg","eshop":"Palm - 94 (50%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2017"},{"id":"b123","autor":"Bareš, Pavel","kniha":"Projekt Kronos","serie":"","dil":"1","zanr":"Urban sci-fi","pocetStran":"568","coverUrl":"https://www.databazeknih.cz/img/books/33_/335582/projekt-kronos-hxb-335582.jpg","eshop":"A - 100","stav":"k nákupu","poznamka":"Koupit - Alza (100 - 50%)","tracking":{"taťka":{"veCtecce":true,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"2017"},{"id":"b124","autor":"Heitz, Markus","kniha":"Trpaslíci","serie":"Trpaslíci","dil":"1","zanr":"Fantasy","pocetStran":"576","coverUrl":"https://www.databazeknih.cz/img/books/38_/384/trpaslici-E9Z-384.jpg","eshop":"A - 125","stav":"k nákupu","poznamka":"Koupit - Alza (125 - 50%)","tracking":{"taťka":{"veCtecce":true,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"2005"},{"id":"b125","autor":"Heitz, Markus","kniha":"Válka trpaslíků","serie":"Trpaslíci","dil":"2","zanr":"Fantasy","pocetStran":"519","coverUrl":"https://www.databazeknih.cz/img/books/38_/385/valka-trpasliku-i7N-385.jpg","eshop":"A - 125","stav":"k nákupu","poznamka":"","tracking":{"taťka":{"veCtecce":true,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"2005"},{"id":"b126","autor":"Heitz, Markus","kniha":"Pomsta trpaslíků","serie":"Trpaslíci","dil":"3","zanr":"Fantasy","pocetStran":"554","coverUrl":"https://www.databazeknih.cz/img/books/38_/386/pomsta-trpasliku-Vfx-386.jpg","eshop":"A - 125","stav":"k nákupu","poznamka":"","tracking":{"taťka":{"veCtecce":true,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"2006"},{"id":"b127","autor":"Heitz, Markus","kniha":"Osud trpaslíků","serie":"Trpaslíci","dil":"4","zanr":"","pocetStran":"560","coverUrl":"https://www.databazeknih.cz/img/books/15_/15845/osud-trpasliku-76o-15845.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2009"},{"id":"b128","autor":"Heitz, Markus","kniha":"Triumf trpaslíků","serie":"Trpaslíci","dil":"5","zanr":"","pocetStran":"544","coverUrl":"https://www.databazeknih.cz/img/books/24_/242212/triumf-trpasliku-Ut8-242212.jpg","eshop":"","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b129","autor":"Larsson, Stieg","kniha":"Muži, kteří nenávidí ženy","serie":"Milénium","dil":"1","zanr":"Krimi","pocetStran":"536","coverUrl":"https://www.databazeknih.cz/img/books/36_/3658/muzi-kteri-nenavidi-zeny-sHh-3658.jpg","eshop":"A - 74","stav":"k nákupu","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2017-12-31","hodnoceni":0,"poznamka":""},"taťka":{"veCtecce":true,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"2008"},{"id":"b130","autor":"Larsson, Stieg","kniha":"Dívka, která si hrála s ohněm","serie":"Milénium","dil":"2","zanr":"Krimi","pocetStran":"603","coverUrl":"https://www.databazeknih.cz/img/books/21_/21456/divka-ktera-si-hrala-s-ohnem-KLi-21456.jpg","eshop":"A - 74","stav":"k nákupu","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2017-12-31","hodnoceni":0,"poznamka":""},"taťka":{"veCtecce":true,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"2009"},{"id":"b131","autor":"Larsson, Stieg","kniha":"Dívka, která kopla do vosího hnízda","serie":"Milénium","dil":"3","zanr":"Krimi","pocetStran":"684","coverUrl":"https://www.databazeknih.cz/img/books/36_/36497/divka-ktera-kopla-do-vosiho-hnizda-zSO-36497.jpg","eshop":"A - 74","stav":"k nákupu","poznamka":"","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2018-12-31","hodnoceni":0,"poznamka":""},"taťka":{"veCtecce":true,"precteno":false,"datum":"","hodnoceni":0,"poznamka":""}},"rokVydani":"2010"},{"id":"b132","autor":"Robert Galbraith","kniha":"Syndrom E","serie":"","dil":"","zanr":"","pocetStran":"384","coverUrl":"https://www.databazeknih.cz/img/books/31_/315360/syndrom-e-r4q-315360.jpg","eshop":"A - 89","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b133","autor":"Robert Galbraith","kniha":"Smrtící DNA","serie":"","dil":"","zanr":"","pocetStran":"432","coverUrl":"https://www.databazeknih.cz/img/books/34_/341766/smrtici-dna-0EC-341766.jpg","eshop":"A - 99","stav":"k nákupu","poznamka":"","tracking":{},"rokVydani":"2017"},{"id":"b134","autor":"Robert Galbraith","kniha":"Volání kukačky","serie":"","dil":"1","zanr":"","pocetStran":"480","coverUrl":"https://www.databazeknih.cz/img/books/19_/190008/cormoran-strike-volani-kukacky-95z-190008.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2014"},{"id":"b135","autor":"Robert Galbraith","kniha":"Ve službách zla","serie":"","dil":"2","zanr":"","pocetStran":"576","coverUrl":"https://www.databazeknih.cz/img/books/26_/269313/ve-sluzbach-zla-xCu-269313.jpeg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b136","autor":"Robert Galbraith","kniha":"Hedvábník","serie":"","dil":"3","zanr":"","pocetStran":"510","coverUrl":"https://www.databazeknih.cz/img/books/22_/221461/hedvabnik-2Er-221461.jpg","eshop":"Alza","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2015"},{"id":"b137","autor":"Robert Bryndza","kniha":"Dívka v ledu","serie":"","dil":"1","zanr":"","pocetStran":"448","coverUrl":"https://www.databazeknih.cz/img/books/31_/318890/divka-v-ledu-u8L-318890.jpg","eshop":"Palm","stav":"vlastněno","poznamka":"","tracking":{},"rokVydani":"2016"},{"id":"b138","autor":"Sawyer, Jamie","kniha":"Artefakt","serie":"Lazarova válka","dil":"1","zanr":"Sci-fi","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/28_/288187/artefakt-OZ3-288187.jpg","eshop":"Palm - 75 (50%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2016"},{"id":"b139","autor":"Sawyer, Jamie","kniha":"Legie","serie":"Lazarova válka","dil":"2","zanr":"Sci-fi","pocetStran":"336","coverUrl":"https://www.databazeknih.cz/img/books/34_/344019/legie-LNd-344019.jpg","eshop":"Palm - 113 (40%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2018"},{"id":"b140","autor":"Sawyer, Jamie","kniha":"Počátek","serie":"Lazarova válka","dil":"3","zanr":"Sci-fi","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/37_/372568/pocatek-leR-372568.jpg","eshop":"Palm - 132 (30%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2018"},{"id":"b141","autor":"Cch' - Sin, Liou","kniha":"Problém tří těles","serie":"Vzpomínka na Zemi","dil":"1","zanr":"Sci-fi","pocetStran":"447","coverUrl":"https://www.databazeknih.cz/img/books/33_/334860/problem-tri-teles-jPU-334860.jpg","eshop":"Palm - 119 (40%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2017"},{"id":"b142","autor":"Cch' - Sin, Liou","kniha":"Temný les","serie":"Vzpomínka na Zemi","dil":"2","zanr":"Sci-fi","pocetStran":"600","coverUrl":"https://www.databazeknih.cz/img/books/34_/345285/temny-les-VCP-345285.jpg","eshop":"Palm - 119 (40%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2017"},{"id":"b143","autor":"Cch' - Sin, Liou","kniha":"Vzpomínka na Zemi","serie":"Vzpomínka na Zemi","dil":"3","zanr":"Sci-fi","pocetStran":"751","coverUrl":"https://www.databazeknih.cz/img/books/38_/380516/vzpominka-na-zemi-1fh-380516.jpg","eshop":"Palm - 250","stav":"k nákupu","poznamka":"6.8.2020","tracking":{},"rokVydani":"2018"},{"id":"b144","autor":"Hlávka, Jan; Vybíralová Jana","kniha":"Mráz a hry","serie":"Algor","dil":"1","zanr":"Sci-fi","pocetStran":"504","coverUrl":"https://www.databazeknih.cz/img/books/17_/172454/mraz-a-hry-0eF-172454.jpeg","eshop":"Palm - 95 (40%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2013"},{"id":"b145","autor":"Hlávka, Jan; Vybíralová Jana","kniha":"Tenký led","serie":"Algor","dil":"2","zanr":"Sci-fi","pocetStran":"696","coverUrl":"https://www.databazeknih.cz/img/books/22_/229897/algor-tenky-led-Gue-229897.jpg","eshop":"Palm - 119 (40%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2014"},{"id":"b146","autor":"Hlávka, Jan; Vybíralová Jana","kniha":"Pomníky zimy","serie":"Algor","dil":"3","zanr":"Sci-fi","pocetStran":"652","coverUrl":"https://www.databazeknih.cz/img/books/34_/343160/pomniky-zimy-cE9-343160.jpg","eshop":"Palm - 129 (35%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2017"},{"id":"b147","autor":"Hlávka, Jan; Vybíralová Jana","kniha":"Hlad Chiméry","serie":"Algor","dil":"4","zanr":"Sci-fi","pocetStran":"674","coverUrl":"https://www.databazeknih.cz/img/books/45_/452362/chlad-chimery-d1O-452362.jpg","eshop":"","stav":"k nákupu","poznamka":"Koupit","tracking":{},"rokVydani":"2020"},{"id":"b148","autor":"Dalzelle, Joshua","kniha":"Válečná loď","serie":"Černá flotila","dil":"1","zanr":"Sci-fi","pocetStran":"256","coverUrl":"https://www.databazeknih.cz/img/books/28_/288518/valecna-lod-dew-288518.jpg","eshop":"Palm - 97 (35%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2016"},{"id":"b149","autor":"Dalzelle, Joshua","kniha":"Volání do zbraně","serie":"Černá flotila","dil":"2","zanr":"Sci-fi","pocetStran":"272","coverUrl":"https://www.databazeknih.cz/img/books/32_/323860/volani-do-zbrane-FI8-323860.jpg","eshop":"Palm - 97 (35%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2016"},{"id":"b150","autor":"Dalzelle, Joshua","kniha":"Protiúder","serie":"Černá flotila","dil":"3","zanr":"Sci-fi","pocetStran":"256","coverUrl":"https://www.databazeknih.cz/img/books/33_/332824/protiuder-Qrt-332824.jpg","eshop":"Palm - 97 (35%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2017"},{"id":"b151","autor":"Taylor, Dennis E.","kniha":"My jsme legie","serie":"Bobiverzum","dil":"1","zanr":"Sci-fi","pocetStran":"376","coverUrl":"https://www.databazeknih.cz/img/books/36_/364823/my-jsme-legie-aEF-364823.JPG","eshop":"Palm - 119 (40%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2018"},{"id":"b152","autor":"Pecinovský, Jozef","kniha":"Stavitelé Arestonu","serie":"Areston","dil":"0","zanr":"Sci-fi","pocetStran":"184","coverUrl":"https://www.databazeknih.cz/img/books/35_/358963/stavitele-arestonu-H2D-358963.jpg","eshop":"Palm - 59 (40%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2017"},{"id":"b153","autor":"Pecinovský, Jozef","kniha":"Areston","serie":"Areston","dil":"1","zanr":"Sci-fi","pocetStran":"336","coverUrl":"https://www.databazeknih.cz/img/books/29_/290163/areston-irZ-290163.jpg","eshop":"Palm - 89 (40%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2016"},{"id":"b154","autor":"Pecinovský, Jozef","kniha":"Útěk z Arestonu","serie":"Areston","dil":"2","zanr":"Sci-fi","pocetStran":"360","coverUrl":"https://www.databazeknih.cz/img/books/30_/307625/utek-z-arestonu-Z19-307625.jpg","eshop":"Palm - 101 (40%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2017"},{"id":"b155","autor":"Pecinovský, Jozef","kniha":"Vládce Arestonu","serie":"Areston","dil":"3","zanr":"Sci-fi","pocetStran":"368","coverUrl":"https://www.databazeknih.cz/img/books/30_/307632/vladce-arestonu-WuJ-307632.jpg","eshop":"Palm - 101 (40%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2017"},{"id":"b156","autor":"Hough, J. M.","kniha":"Mass Effect: Andromeda - Vzpoura na Nexu","serie":"Mass Effect: Andromeda","dil":"1","zanr":"Sci-fi","pocetStran":"320","coverUrl":"https://www.databazeknih.cz/img/books/34_/346333/vzpoura-na-nexu-lGO-346333.jpg","eshop":"Palm - 113 (40%)","stav":"k nákupu","poznamka":"29.7.2018","tracking":{},"rokVydani":"2017"},{"id":"b157","autor":"Tahir, Saaba","kniha":"Jiskra v popelu","serie":"Jiskra v popelu","dil":"1","zanr":"Fantasy","pocetStran":"456","coverUrl":"https://www.databazeknih.cz/img/books/27_/275091/jiskra-v-popelu-zph-275091.jpg","eshop":"Palm - 119 (40%)","stav":"k nákupu","poznamka":"2.8.2018","tracking":{},"rokVydani":"2016"},{"id":"b158","autor":"Cch' - Sin, Liou","kniha":"Kulový blesk","serie":"","dil":"-","zanr":"Sci-fi","pocetStran":"416","coverUrl":"https://www.databazeknih.cz/img/books/41_/410348/kulovy-blesk-Xwt-410348.jpeg","eshop":"Alza - 149 (40%)","stav":"k nákupu","poznamka":"24.12.2020","tracking":{"Marek":{"veCtecce":true,"precteno":true,"datum":"2021-12-31","hodnoceni":0,"poznamka":""}},"rokVydani":"2019"},{"id":"b159","autor":"Paolini, Christopher","kniha":"Spát v moři hvězd - Kniha I.","serie":"","dil":"1","zanr":"Sci-fi","pocetStran":"560","coverUrl":"https://www.databazeknih.cz/img/books/45_/452511/spat-v-mori-hvezd-5fq-452511.jpg","eshop":"Palm - 188 (30%)","stav":"k nákupu","poznamka":"28.3.2021","tracking":{},"rokVydani":"2020"},{"id":"b160","autor":"Heteša, Petr","kniha":"Skrytá rizika kvantové démonologie","serie":"","dil":"-","zanr":"Fantasy","pocetStran":"526","coverUrl":"https://www.databazeknih.cz/img/books/41_/418608/skryta-rizika-kvantove-demonologie-nfX-418608.jpg","eshop":"Palm","stav":"vlastněno","poznamka":"31.3.2021","tracking":{},"rokVydani":"2019"}]/*__SEED_END__*/;
+
+  // ---- STAV -------------------------------------------------
+  let STATE = { readers: ["Marek", "taťka"], books: [], sheetUrl: "" };
+  let activeReader = null;
+  let sort = { key: "", dir: 1 };
+  let applyingRemote = false;   // anti-echo flag
+  let pushTimer = null;
+
+  // ---- POMOCNÉ ----------------------------------------------
+  const $  = (s) => document.querySelector(s);
+  const $$ = (s) => Array.from(document.querySelectorAll(s));
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  function norm(s) {
+    return String(s || "").toLowerCase()
+      .normalize("NFKD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+  }
+  function bookKey(b) { return norm(b.autor) + "|" + norm(b.kniha); }
+  function uid() { return "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function deriveStav(eshop, pozn) {
+    const e = String(eshop || "").trim();
+    const p = String(pozn || "").trim().toLowerCase();
+    if (e && !/[\d()%]/.test(e) && !p.startsWith("koupit")) return "vlastněno";
+    return "k nákupu";
+  }
+  function ensureTrack(book, reader) {
+    if (!book.tracking) book.tracking = {};
+    if (!book.tracking[reader]) book.tracking[reader] = { veCtecce: false, precteno: false, datum: "", hodnoceni: 0, poznamka: "" };
+    return book.tracking[reader];
+  }
+
+  // ---- PERSISTENCE ------------------------------------------
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem(LS_DATA);
+      if (raw) {
+        const d = JSON.parse(raw);
+        STATE.readers  = Array.isArray(d.readers) && d.readers.length ? d.readers : STATE.readers;
+        STATE.books    = Array.isArray(d.books) ? d.books : [];
+        STATE.sheetUrl = d.sheetUrl || "";
+        fillFromSeed();
+      } else {
+        // první spuštění – naplň seed
+        STATE.books = JSON.parse(JSON.stringify(SEED_BOOKS));
+        saveLocal(false);
+      }
+    } catch (e) {
+      console.error("loadLocal", e);
+      STATE.books = JSON.parse(JSON.stringify(SEED_BOOKS));
+    }
+  }
+  // fillFromSeed: doplní do už uložených knih prázdná katalogová pole
+  // (rok vydání, počet stran, obálka) z výchozího SEEDu. Páruje podle
+  // autor+název, nikdy nepřepisuje vyplněné hodnoty ani tracking.
+  function fillFromSeed() {
+    try {
+      const idx = {}; STATE.books.forEach((b) => { idx[bookKey(b)] = b; });
+      let n = 0;
+      SEED_BOOKS.forEach((s) => {
+        const b = idx[bookKey(s)];
+        if (!b) return;
+        ["rokVydani", "pocetStran", "coverUrl"].forEach((f) => {
+          if ((b[f] === undefined || b[f] === "" || b[f] === null) && s[f]) { b[f] = s[f]; n++; }
+        });
+      });
+      if (n) saveLocal(false); // ulož lokálně, ale bez bumpu updatedAt (není to uživatelská změna)
+    } catch (e) { console.error("fillFromSeed", e); }
+  }
+  // saveLocal: zapíše data. touch=true => aktualizuje updatedAt (skutečná změna)
+  function saveLocal(touch) {
+    localStorage.setItem(LS_DATA, JSON.stringify(STATE));
+    if (touch) localStorage.setItem(LS_UPDATED, String(Date.now()));
+  }
+  function localUpdatedAt() { return parseInt(localStorage.getItem(LS_UPDATED) || "0", 10) || 0; }
+
+  // markChanged: zavolej po každé uživatelské změně dat
+  function markChanged() {
+    if (applyingRemote) { saveLocal(false); return; }
+    saveLocal(true);
+    const cfg = getCfg();
+    if (cfg.enabled && cfg.token && cfg.gistId) schedulePush();
+  }
+
+  // ---- GIST CONFIG ------------------------------------------
+  function getCfg() {
+    try { return Object.assign({ token: "", gistId: "", enabled: false, lastSync: 0 }, JSON.parse(localStorage.getItem(LS_CFG) || "{}")); }
+    catch (e) { return { token: "", gistId: "", enabled: false, lastSync: 0 }; }
+  }
+  function setCfg(patch) {
+    const cfg = Object.assign(getCfg(), patch);
+    localStorage.setItem(LS_CFG, JSON.stringify(cfg));
+    return cfg;
+  }
+
+  // ---- GIST API ---------------------------------------------
+  function buildPayload() {
+    return { app: "ctenar", version: APP_VERSION, updatedAt: localUpdatedAt(), readers: STATE.readers, books: STATE.books, sheetUrl: STATE.sheetUrl };
+  }
+  async function gistFetch(url, opts) {
+    const cfg = getCfg();
+    const headers = Object.assign({
+      "Authorization": "token " + cfg.token,
+      "Accept": "application/vnd.github+json"
+    }, (opts && opts.headers) || {});
+    const res = await fetch(url, Object.assign({}, opts, { headers }));
+    if (res.status === 401) throw new Error("401 – neplatný token");
+    if (res.status === 403) throw new Error("403 – překročen limit GitHub API, zkus to za chvíli");
+    if (res.status === 404) throw new Error("404 – Gist nenalezen (zkontroluj Gist ID)");
+    if (!res.ok) throw new Error(res.status + " – chyba GitHub API");
+    return res;
+  }
+  async function gistCreate() {
+    const body = { description: "Čtenář – data (app ctenar)", public: false, files: {} };
+    body.files[GIST_FILE] = { content: JSON.stringify(buildPayload(), null, 2) };
+    const res = await gistFetch(GIST_API, { method: "POST", body: JSON.stringify(body) });
+    const data = await res.json();
+    return data.id;
+  }
+  async function gistPush() {
+    const cfg = getCfg();
+    const body = { files: {} };
+    body.files[GIST_FILE] = { content: JSON.stringify(buildPayload(), null, 2) };
+    await gistFetch(GIST_API + "/" + cfg.gistId, { method: "PATCH", body: JSON.stringify(body) });
+  }
+  async function gistPull() {
+    const cfg = getCfg();
+    const res = await gistFetch(GIST_API + "/" + cfg.gistId, { method: "GET" });
+    const data = await res.json();
+    const f = data.files && data.files[GIST_FILE];
+    if (!f) throw new Error("V Gistu chybí soubor " + GIST_FILE);
+    let content = f.content;
+    if (f.truncated && f.raw_url) content = await (await fetch(f.raw_url)).text();
+    return JSON.parse(content);
+  }
+
+  // ---- SYNC ORCHESTRACE -------------------------------------
+  function setSyncState(state, msg) {
+    const btn = $("#syncBtn");
+    btn.dataset.state = state;
+    const icon = $("#syncIcon");
+    icon.textContent = state === "syncing" ? "⟳" : (state === "err" ? "⚠" : "☁");
+    if (msg) btn.title = msg;
+  }
+  function schedulePush() {
+    clearTimeout(pushTimer);
+    setSyncState("syncing", "Synchronizuji…");
+    pushTimer = setTimeout(doPush, 1500);
+  }
+  async function doPush() {
+    const cfg = getCfg();
+    if (!cfg.enabled || !cfg.token || !cfg.gistId) { setSyncState("off"); return; }
+    try {
+      setSyncState("syncing", "Synchronizuji…");
+      await gistPush();
+      setCfg({ lastSync: Date.now() });
+      setSyncState("ok", "Synchronizováno " + new Date().toLocaleString("cs"));
+    } catch (e) {
+      setSyncState("err", String(e.message || e));
+    }
+  }
+  async function doPull(opts) {
+    const cfg = getCfg();
+    if (!cfg.token || !cfg.gistId) return;
+    setSyncState("syncing", "Stahuji…");
+    try {
+      const remote = await gistPull();
+      const rU = remote.updatedAt || 0;
+      const force = opts && opts.force;
+      if (force || rU > localUpdatedAt()) {
+        applyingRemote = true;
+        STATE.readers  = Array.isArray(remote.readers) && remote.readers.length ? remote.readers : STATE.readers;
+        STATE.books    = Array.isArray(remote.books) ? remote.books : STATE.books;
+        STATE.sheetUrl = remote.sheetUrl || STATE.sheetUrl;
+        localStorage.setItem(LS_DATA, JSON.stringify(STATE));
+        localStorage.setItem(LS_UPDATED, String(rU || Date.now()));
+        applyingRemote = false;
+        if (activeReader && STATE.readers.indexOf(activeReader) < 0) activeReader = STATE.readers[0];
+        rebuildFilters(); render();
+      }
+      setCfg({ lastSync: Date.now() });
+      setSyncState("ok", "Synchronizováno " + new Date().toLocaleString("cs"));
+      return remote;
+    } catch (e) {
+      setSyncState("err", String(e.message || e));
+      throw e;
+    }
+  }
+
+  // ---- CSV PARSER -------------------------------------------
+  function parseCSV(text) {
+    const rows = []; let row = []; let cur = ""; let q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) {
+        if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+        else cur += ch;
+      } else {
+        if (ch === '"') q = true;
+        else if (ch === ",") { row.push(cur); cur = ""; }
+        else if (ch === "\n") { row.push(cur); rows.push(row); row = []; cur = ""; }
+        else if (ch === "\r") { /* ignore */ }
+        else cur += ch;
+      }
+    }
+    if (cur.length || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+  }
+  function importFromCSV(text) {
+    const rows = parseCSV(text);
+    // najdi hlavičkový řádek (obsahuje Autor i Kniha/Knihu)
+    let hi = -1;
+    for (let i = 0; i < rows.length; i++) {
+      const low = rows[i].map((c) => norm(c));
+      if (low.indexOf("autor") >= 0 && (low.indexOf("kniha") >= 0 || low.indexOf("nazev") >= 0)) { hi = i; break; }
+    }
+    if (hi < 0) throw new Error("Nenašel jsem hlavičku se sloupci Autor a Kniha.");
+    const H = rows[hi].map((c) => norm(c));
+    const col = (names) => { for (const n of names) { const idx = H.indexOf(n); if (idx >= 0) return idx; } return -1; };
+    const cAutor = col(["autor"]);
+    const cKniha = col(["kniha", "nazev", "nazevknihy"]);
+    const cSerie = col(["serie"]);
+    const cDil   = col(["dil"]);
+    const cZanr  = col(["zanr"]);
+    const cPozn  = col(["poznamka"]);
+    const cShop  = col(["koupenona", "eshop", "obchod", "kdekoupeno"]);
+
+    const idx = {}; STATE.books.forEach((b) => { idx[bookKey(b)] = b; });
+    let added = 0, updated = 0;
+    for (let i = hi + 1; i < rows.length; i++) {
+      const r = rows[i]; if (!r) continue;
+      const autor = (r[cAutor] || "").trim();
+      const kniha = (r[cKniha] || "").trim();
+      if (!autor && !kniha) continue;
+      if (!kniha) continue;
+      const rec = {
+        autor: autor,
+        kniha: kniha,
+        serie: cSerie >= 0 ? (r[cSerie] || "").trim() : "",
+        dil:   cDil   >= 0 ? (r[cDil]   || "").trim() : "",
+        zanr:  cZanr  >= 0 ? (r[cZanr]  || "").trim() : "",
+        eshop: cShop  >= 0 ? (r[cShop]  || "").trim() : "",
+        poznamka: cPozn >= 0 ? (r[cPozn] || "").trim() : ""
+      };
+      rec.stav = deriveStav(rec.eshop, rec.poznamka);
+      const k = norm(autor) + "|" + norm(kniha);
+      const ex = idx[k];
+      if (ex) {
+        // aktualizuj katalogová pole, zachovej tracking, id, pocetStran
+        ex.autor = rec.autor; ex.kniha = rec.kniha; ex.serie = rec.serie;
+        ex.dil = rec.dil; ex.zanr = rec.zanr; ex.eshop = rec.eshop;
+        ex.poznamka = rec.poznamka; ex.stav = rec.stav;
+        updated++;
+      } else {
+        const nb = Object.assign({ id: uid(), pocetStran: "", rokVydani: "", coverUrl: "", tracking: {} }, rec);
+        STATE.books.push(nb); idx[k] = nb; added++;
+      }
+    }
+    markChanged();
+    return { added, updated };
+  }
+
+  // ---- THEME TOGGLE (dle šablony kefovy-aplikace) -----------
+  (function () {
+    const html = document.documentElement;
+    const btn = $("#themeToggle");
+    const iconEl = $("#themeIcon"), labelEl = $("#themeLabel"), hintEl = $("#themeHint");
+    const ORDER = ["auto", "day", "night"]; let mode = "auto";
+    const isDay = () => { const h = new Date().getHours(); return h >= 6 && h < 19; };
+    function render() {
+      btn.dataset.mode = mode;
+      if (mode === "auto") {
+        const day = isDay();
+        html.setAttribute("data-theme", day ? "light" : "dark");
+        iconEl.textContent = "◐"; labelEl.textContent = "Auto";
+        hintEl.textContent = day ? "(den)" : "(noc)"; hintEl.style.display = "";
+      } else if (mode === "day") {
+        html.setAttribute("data-theme", "light");
+        iconEl.textContent = "☀"; labelEl.textContent = "Den"; hintEl.style.display = "none";
+      } else {
+        html.setAttribute("data-theme", "dark");
+        iconEl.textContent = "☾"; labelEl.textContent = "Noc"; hintEl.style.display = "none";
+      }
+    }
+    btn.addEventListener("click", () => { mode = ORDER[(ORDER.indexOf(mode) + 1) % ORDER.length]; render(); });
+    render();
+    setInterval(() => { if (mode === "auto") render(); }, 60000);
+  })();
+
+  // ---- FILTRY / DROPDOWNY -----------------------------------
+  function rebuildFilters() {
+    const series = Array.from(new Set(STATE.books.map((b) => b.serie).filter(Boolean))).sort((a, b) => a.localeCompare(b, "cs"));
+    const zanry  = Array.from(new Set(STATE.books.map((b) => b.zanr).filter(Boolean))).sort((a, b) => a.localeCompare(b, "cs"));
+    const fSerie = $("#fSerie"), fZanr = $("#fZanr");
+    const sv = fSerie.value, zv = fZanr.value;
+    fSerie.innerHTML = '<option value="">Všechny série</option>' + series.map((s) => `<option>${esc(s)}</option>`).join("");
+    fZanr.innerHTML  = '<option value="">Všechny žánry</option>' + zanry.map((z) => `<option>${esc(z)}</option>`).join("");
+    fSerie.value = sv; fZanr.value = zv;
+    // čtenáři
+    const rSel = $("#readerSel");
+    rSel.innerHTML = STATE.readers.map((r) => `<option>${esc(r)}</option>`).join("");
+    if (!activeReader || STATE.readers.indexOf(activeReader) < 0) activeReader = STATE.readers[0];
+    rSel.value = activeReader;
+  }
+
+  function currentFiltered() {
+    const q = norm($("#search").value);
+    const fs = $("#fSerie").value, fz = $("#fZanr").value, fst = $("#fStav").value, ft = $("#fTrack").value;
+    let list = STATE.books.filter((b) => {
+      if (fs && b.serie !== fs) return false;
+      if (fz && b.zanr !== fz) return false;
+      if (fst && b.stav !== fst) return false;
+      if (q) { const hay = norm(b.kniha + " " + b.autor + " " + b.serie); if (hay.indexOf(q) < 0) return false; }
+      if (ft) {
+        const t = (b.tracking && b.tracking[activeReader]) || {};
+        if (ft === "ctecka" && !t.veCtecce) return false;
+        if (ft === "notctecka" && t.veCtecce) return false;
+        if (ft === "precteno" && !t.precteno) return false;
+        if (ft === "neprecteno" && t.precteno) return false;
+      }
+      return true;
+    });
+    if (sort.key) {
+      const trackVal = (b, key) => {
+        const t = (b.tracking && b.tracking[activeReader]) || {};
+        if (key === "t_ctecka") return t.veCtecce ? 1 : 0;
+        if (key === "t_precteno") return t.precteno ? 1 : 0;
+        if (key === "t_hodnoceni") return t.hodnoceni || 0;
+        return null;
+      };
+      list = list.slice().sort((a, b) => {
+        if (sort.key.startsWith("t_")) return (trackVal(a, sort.key) - trackVal(b, sort.key)) * sort.dir;
+        let x = a[sort.key] || "", y = b[sort.key] || "";
+        if (sort.key === "dil") { x = parseFloat(String(x).replace(",", ".")) || 0; y = parseFloat(String(y).replace(",", ".")) || 0; return (x - y) * sort.dir; }
+        return String(x).localeCompare(String(y), "cs") * sort.dir;
+      });
+    }
+    return list;
+  }
+
+  // ---- RENDER -----------------------------------------------
+  function starHtml(n) {
+    let h = '<span class="stars" data-stars>';
+    for (let i = 1; i <= 5; i++) h += `<span class="st ${i <= n ? "on" : ""}" data-star="${i}">★</span>`;
+    h += "</span>";
+    return h;
+  }
+  function render() {
+    const list = currentFiltered();
+    const tb = $("#tbody");
+    tb.innerHTML = list.map((b) => {
+      const t = (b.tracking && b.tracking[activeReader]) || {};
+      const serieSub = [b.serie, b.dil ? "díl " + b.dil : ""].filter(Boolean).join(" · ");
+      const stranSub = b.pocetStran ? b.pocetStran + " s." : "";
+      const sub = [serieSub, stranSub].filter(Boolean).join(" · ");
+      const stavChip = b.stav === "vlastněno"
+        ? '<span class="chip owned">vlastněno</span>'
+        : '<span class="chip wish">k nákupu</span>';
+      const cover = b.coverUrl
+        ? `<img class="cover cover-click" src="${esc(b.coverUrl)}" alt="" loading="lazy" data-detail onerror="this.outerHTML='<div class=&quot;cover-ph cover-click&quot; data-detail>📖</div>'">`
+        : `<div class="cover-ph cover-click" data-detail>📖</div>`;
+      return `<tr data-id="${b.id}">
+        <td class="cell-cover">${cover}</td>
+        <td class="cell-main">
+          <div class="book-title clickable" data-detail>${esc(b.kniha)}</div>
+          ${sub ? `<div class="book-sub">${esc(sub)}</div>` : ""}
+        </td>
+        <td data-l="Autor">${esc(b.autor)}</td>
+        <td data-l="Žánr">${b.zanr ? `<span class="chip">${esc(b.zanr)}</span>` : ""}</td>
+        <td data-l="eShop">${esc(b.eshop)}</td>
+        <td data-l="Stav">${stavChip}</td>
+        <td data-l="Čtečka" class="cell-track"><input type="checkbox" class="chk" data-k="veCtecce" ${t.veCtecce ? "checked" : ""}></td>
+        <td data-l="Přečteno" class="cell-track">
+          <input type="checkbox" class="chk" data-k="precteno" ${t.precteno ? "checked" : ""}>
+          ${t.precteno ? `<div class="read-date"><input type="date" data-k="datum" value="${esc(dateVal(t.datum))}" style="padding:3px 6px;font-size:0.8rem"></div>` : ""}
+          ${t.precteno && t.datum && !/^\d{4}-/.test(t.datum) ? `<div class="read-date">${esc(t.datum)}</div>` : ""}
+        </td>
+        <td data-l="Hodnocení" class="cell-track">${starHtml(t.hodnoceni || 0)}</td>
+        <td data-l="" class="cell-track"><button class="btn-icon" data-edit title="Upravit knihu">⋯</button></td>
+      </tr>`;
+    }).join("");
+    $("#emptyMsg").style.display = list.length ? "none" : "block";
+    updateSortIndicators();
+    renderStats();
+  }
+  function updateSortIndicators() {
+    $$("#headRow th[data-sort]").forEach((th) => {
+      const base = th.textContent.replace(/[ ▲▼]+$/, "");
+      th.innerHTML = esc(base) + (sort.key === th.dataset.sort ? `<span class="sort-ind">${sort.dir > 0 ? "▲" : "▼"}</span>` : "");
+    });
+  }
+  function dateVal(d) { return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : ""; }
+
+  function renderStats() {
+    const total = STATE.books.length;
+    const owned = STATE.books.filter((b) => b.stav === "vlastněno").length;
+    let inReader = 0, read = 0;
+    STATE.books.forEach((b) => { const t = (b.tracking && b.tracking[activeReader]) || {}; if (t.veCtecce) inReader++; if (t.precteno) read++; });
+    $("#stats").innerHTML =
+      `<span class="stat">Knih celkem: <b>${total}</b></span>` +
+      `<span class="stat">Vlastněno: <b>${owned}</b></span>` +
+      `<span class="stat">${esc(activeReader)} – ve čtečce: <b>${inReader}</b></span>` +
+      `<span class="stat">${esc(activeReader)} – přečteno: <b>${read}</b></span>`;
+  }
+
+  // ---- UDÁLOSTI: TABULKA ------------------------------------
+  $("#tbody").addEventListener("change", (e) => {
+    const tr = e.target.closest("tr"); if (!tr) return;
+    const b = STATE.books.find((x) => x.id === tr.dataset.id); if (!b) return;
+    const k = e.target.dataset.k;
+    if (!k) return;
+    const t = ensureTrack(b, activeReader);
+    if (e.target.type === "checkbox") {
+      t[k] = e.target.checked;
+      if (k === "precteno" && e.target.checked && !t.datum) t.datum = new Date().toISOString().slice(0, 10);
+      markChanged();
+      if (k === "precteno") render(); else renderStats();
+    } else if (k === "datum") {
+      t.datum = e.target.value; markChanged();
+    }
+  });
+  $("#tbody").addEventListener("click", (e) => {
+    const tr = e.target.closest("tr"); if (!tr) return;
+    const b = STATE.books.find((x) => x.id === tr.dataset.id); if (!b) return;
+    const star = e.target.closest("[data-star]");
+    if (star) {
+      const t = ensureTrack(b, activeReader);
+      const v = parseInt(star.dataset.star, 10);
+      t.hodnoceni = (t.hodnoceni === v) ? 0 : v; // klik na stejnou = zrušit
+      markChanged(); render(); return;
+    }
+    if (e.target.closest("[data-detail]")) { openDetail(b); return; }
+    if (e.target.closest("[data-edit]")) { openBook(b); return; }
+  });
+
+  // třídění
+  $("#headRow").addEventListener("click", (e) => {
+    const th = e.target.closest("th"); if (!th || th.classList.contains("no-sort")) return;
+    const key = th.dataset.sort; if (!key) return;
+    if (sort.key === key) sort.dir *= -1; else { sort.key = key; sort.dir = 1; }
+    render();
+  });
+
+  // filtry
+  ["#search", "#fSerie", "#fZanr", "#fStav", "#fTrack"].forEach((s) => $(s).addEventListener("input", render));
+  $("#readerSel").addEventListener("change", (e) => { activeReader = e.target.value; localStorage.setItem(LS_READER, activeReader); render(); });
+
+  // ---- MODÁL: KNIHA -----------------------------------------
+  let editingId = null;
+  function openBook(b) {
+    editingId = b ? b.id : null;
+    $("#bookModalTitle").textContent = b ? "Upravit knihu" : "Přidat knihu";
+    $("#mKniha").value = b ? b.kniha : "";
+    $("#mAutor").value = b ? b.autor : "";
+    $("#mSerie").value = b ? b.serie : "";
+    $("#mDil").value   = b ? b.dil : "";
+    $("#mZanr").value  = b ? b.zanr : "";
+    $("#mRok").value   = b ? (b.rokVydani || "") : "";
+    $("#mStran").value = b ? b.pocetStran : "";
+    $("#mEshop").value = b ? b.eshop : "";
+    $("#mStav").value  = b ? b.stav : "vlastněno";
+    $("#mPozn").value  = b ? b.poznamka : "";
+    $("#mCover").value = b ? (b.coverUrl || "") : "";
+    $("#mDelete").style.display = b ? "" : "none";
+    updateCoverPrev();
+    openModal("#bookModal");
+  }
+  function updateCoverPrev() {
+    const url = $("#mCover").value.trim();
+    $("#mCoverPrev").innerHTML = url
+      ? `<img class="cover cover-preview" src="${esc(url)}" alt="" onerror="this.outerHTML='<div class=&quot;cover-ph cover-preview&quot;>📖</div>'">`
+      : `<div class="cover-ph cover-preview">📖</div>`;
+    const q = encodeURIComponent(($("#mAutor").value + " " + $("#mKniha").value).trim());
+    $("#mCoverSearch").href = "https://www.databazeknih.cz/search?q=" + q;
+  }
+  $("#mCover").addEventListener("input", updateCoverPrev);
+  $("#mAutor").addEventListener("input", updateCoverPrev);
+  $("#mKniha").addEventListener("input", updateCoverPrev);
+  $("#addBook").addEventListener("click", () => openBook(null));
+  $("#mCancel").addEventListener("click", () => closeModal("#bookModal"));
+  $("#mSave").addEventListener("click", () => {
+    const kniha = $("#mKniha").value.trim();
+    if (!kniha) { $("#mKniha").focus(); return; }
+    const data = {
+      kniha, autor: $("#mAutor").value.trim(), serie: $("#mSerie").value.trim(),
+      dil: $("#mDil").value.trim(), zanr: $("#mZanr").value.trim(),
+      rokVydani: $("#mRok").value.trim(),
+      pocetStran: $("#mStran").value.trim(), eshop: $("#mEshop").value.trim(),
+      stav: $("#mStav").value, poznamka: $("#mPozn").value.trim(),
+      coverUrl: $("#mCover").value.trim()
+    };
+    if (editingId) {
+      const b = STATE.books.find((x) => x.id === editingId); Object.assign(b, data);
+    } else {
+      STATE.books.push(Object.assign({ id: uid(), tracking: {} }, data));
+    }
+    markChanged(); rebuildFilters(); render(); closeModal("#bookModal");
+  });
+  $("#mDelete").addEventListener("click", () => {
+    if (!editingId) return;
+    if (!confirm("Opravdu smazat tuto knihu i s trackingem všech čtenářů?")) return;
+    STATE.books = STATE.books.filter((x) => x.id !== editingId);
+    markChanged(); rebuildFilters(); render(); closeModal("#bookModal");
+  });
+
+  // ---- MODÁL: DETAIL KNIHY ----------------------------------
+  let detailBookId = null;
+  function fmtDate(d) {
+    if (!d) return "";
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+    if (m) return `${+m[3]}.${+m[2]}.${m[1]}`;
+    return d; // volný text (např. jen rok)
+  }
+  function gRow(label, value) {
+    return `<div class="dg-label">${esc(label)}</div><div class="dg-value">${value == null || value === "" ? "—" : esc(value)}</div>`;
+  }
+  function openDetail(b) {
+    detailBookId = b.id;
+    const t = (b.tracking && b.tracking[activeReader]) || {};
+    $("#dCover").innerHTML = b.coverUrl
+      ? `<img class="cover cover-preview" src="${esc(b.coverUrl)}" alt="" onerror="this.outerHTML='<div class=&quot;cover-ph cover-preview&quot;>📖</div>'">`
+      : `<div class="cover-ph cover-preview">📖</div>`;
+    $("#dTitle").textContent = b.kniha;
+    $("#dAuthor").textContent = b.autor || "—";
+    $("#dStars").innerHTML = starHtml(t.hodnoceni || 0).replace('class="stars"', 'class="stars readonly"');
+    let precteno = "—";
+    if (t.precteno) precteno = fmtDate(t.datum) || "ano";
+    $("#dGrid").innerHTML =
+      gRow("Žánr", b.zanr) +
+      gRow("Série", b.serie) +
+      gRow("Díl", b.dil) +
+      gRow("Rok vydání", b.rokVydani) +
+      gRow("Počet stran", b.pocetStran) +
+      gRow("eShop", b.eshop) +
+      gRow("Stav", b.stav) +
+      gRow("Čtečka", t.veCtecce ? "ano" : "ne") +
+      gRow("Přečteno", precteno);
+    $("#dReaderName").textContent = activeReader;
+    $("#dNote").value = t.poznamka || "";
+    openModal("#detailModal");
+  }
+  $("#dClose").addEventListener("click", () => closeModal("#detailModal"));
+  $("#dSaveNote").addEventListener("click", () => {
+    const b = STATE.books.find((x) => x.id === detailBookId); if (!b) return;
+    ensureTrack(b, activeReader).poznamka = $("#dNote").value.trim();
+    markChanged(); render(); closeModal("#detailModal");
+  });
+  $("#dEdit").addEventListener("click", () => {
+    const b = STATE.books.find((x) => x.id === detailBookId); if (!b) return;
+    closeModal("#detailModal"); openBook(b);
+  });
+
+  // ---- MODÁL: ČTENÁŘI ---------------------------------------
+  function renderReaderList() {
+    $("#readerListUI").innerHTML = STATE.readers.map((r, i) => `
+      <li>
+        <span class="rname">${esc(r)}</span>
+        <button class="btn btn-sm" data-rrename="${i}">Přejmenovat</button>
+        <button class="btn btn-sm btn-danger" data-rdel="${i}" ${STATE.readers.length <= 1 ? "disabled" : ""}>Smazat</button>
+      </li>`).join("");
+  }
+  $("#manageReaders").addEventListener("click", () => { renderReaderList(); openModal("#readersModal"); });
+  $("#readersClose").addEventListener("click", () => closeModal("#readersModal"));
+  $("#addReaderBtn").addEventListener("click", () => {
+    const name = $("#newReaderName").value.trim(); if (!name) return;
+    if (STATE.readers.indexOf(name) >= 0) { alert("Čtenář už existuje."); return; }
+    STATE.readers.push(name); $("#newReaderName").value = "";
+    markChanged(); rebuildFilters(); renderReaderList(); render();
+  });
+  $("#readerListUI").addEventListener("click", (e) => {
+    const ren = e.target.closest("[data-rrename]"); const del = e.target.closest("[data-rdel]");
+    if (ren) {
+      const i = +ren.dataset.rrename; const old = STATE.readers[i];
+      const nn = prompt("Nové jméno čtenáře:", old); if (!nn || !nn.trim() || nn === old) return;
+      if (STATE.readers.indexOf(nn.trim()) >= 0) { alert("Takový čtenář už existuje."); return; }
+      const nm = nn.trim();
+      STATE.readers[i] = nm;
+      STATE.books.forEach((b) => { if (b.tracking && b.tracking[old]) { b.tracking[nm] = b.tracking[old]; delete b.tracking[old]; } });
+      if (activeReader === old) activeReader = nm;
+      markChanged(); rebuildFilters(); renderReaderList(); render();
+    } else if (del) {
+      const i = +del.dataset.rdel; const nm = STATE.readers[i];
+      if (STATE.readers.length <= 1) return;
+      if (!confirm('Smazat čtenáře "' + nm + '"? Jeho tracking u všech knih se odstraní.')) return;
+      STATE.readers.splice(i, 1);
+      STATE.books.forEach((b) => { if (b.tracking) delete b.tracking[nm]; });
+      if (activeReader === nm) activeReader = STATE.readers[0];
+      markChanged(); rebuildFilters(); renderReaderList(); render();
+    }
+  });
+
+  // ---- MODÁL: IMPORT ----------------------------------------
+  $("#importBtn").addEventListener("click", () => {
+    $("#sheetUrl").value = STATE.sheetUrl || "";
+    $("#importStatus").style.display = "none";
+    openModal("#importModal");
+  });
+  $("#importClose").addEventListener("click", () => closeModal("#importModal"));
+  $("#importRun").addEventListener("click", async () => {
+    const url = $("#sheetUrl").value.trim();
+    const st = $("#importStatus"); st.style.display = "block"; st.className = "status-line";
+    if (!url) { st.textContent = "Zadej odkaz na CSV."; st.className = "status-line err"; return; }
+    STATE.sheetUrl = url; markChanged();
+    st.textContent = "Načítám…";
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      if (/<html/i.test(text.slice(0, 200))) throw new Error('Odkaz nevrací CSV. Použij odkaz z „Publikovat na web → CSV“, ne běžný odkaz na tabulku.');
+      const r = importFromCSV(text);
+      rebuildFilters(); render();
+      st.className = "status-line ok";
+      st.textContent = `Hotovo: přidáno ${r.added}, aktualizováno ${r.updated} knih.`;
+    } catch (e) {
+      st.className = "status-line err";
+      st.textContent = "Chyba: " + (e.message || e);
+    }
+  });
+
+  // ---- ZÁLOHA: EXPORT / IMPORT JSON -------------------------
+  async function exportJSON() {
+    const data = JSON.stringify(buildPayload(), null, 2);
+    const fname = "ctenar-" + new Date().toISOString().slice(0, 10) + ".json";
+    // Chrome/Edge: nativní save dialog (uživatel může zacílit do složky JSON/)
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: fname,
+          types: [{ description: "JSON záloha Čtenáře", accept: { "application/json": [".json"] } }]
+        });
+        const w = await handle.createWritable();
+        await w.write(data); await w.close();
+        return fname;
+      } catch (e) {
+        if (e && e.name === "AbortError") return null; // uživatel zrušil dialog
+        // jinak spadni do fallbacku níže
+      }
+    }
+    // Safari/Firefox: klasické stažení do Downloads
+    const blob = new Blob([data], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    return fname;
+  }
+  function readSelectedJSON() {
+    return new Promise((resolve, reject) => {
+      const f = $("#jsonFile").files[0];
+      if (!f) { reject(new Error("Nejdřív vyber soubor se zálohou.")); return; }
+      const rd = new FileReader();
+      rd.onload = () => { try { resolve(JSON.parse(rd.result)); } catch (e) { reject(new Error("Soubor není platný JSON.")); } };
+      rd.onerror = () => reject(new Error("Soubor se nepodařilo přečíst."));
+      rd.readAsText(f);
+    });
+  }
+  const CATALOG_FIELDS = ["autor", "kniha", "serie", "dil", "zanr", "eshop", "poznamka", "stav", "rokVydani", "pocetStran", "coverUrl"];
+  function importJSONData(obj, mode) {
+    if (!obj || !Array.isArray(obj.books)) throw new Error("Tohle nevypadá jako záloha Čtenáře (chybí seznam knih).");
+    if (mode === "replace") {
+      STATE.books = obj.books.slice();
+      if (Array.isArray(obj.readers) && obj.readers.length) STATE.readers = obj.readers.slice();
+      if (typeof obj.sheetUrl === "string") STATE.sheetUrl = obj.sheetUrl;
+      markChanged();
+      return { mode: "replace", count: STATE.books.length };
+    }
+    // mode === "merge": upsert dle autor+název, zachovej/sluč tracking
+    const idx = {}; STATE.books.forEach((b) => { idx[bookKey(b)] = b; });
+    let added = 0, updated = 0;
+    obj.books.forEach((nb) => {
+      if (!nb) return;
+      const ex = idx[bookKey(nb)];
+      if (ex) {
+        CATALOG_FIELDS.forEach((f) => { if (nb[f] !== undefined && nb[f] !== "" && nb[f] !== null) ex[f] = nb[f]; });
+        if (nb.tracking && typeof nb.tracking === "object") {
+          ex.tracking = ex.tracking || {};
+          Object.keys(nb.tracking).forEach((rd) => { ex.tracking[rd] = nb.tracking[rd]; });
+        }
+        updated++;
+      } else {
+        const copy = Object.assign({ id: uid(), pocetStran: "", rokVydani: "", coverUrl: "", tracking: {} }, nb);
+        STATE.books.push(copy); idx[bookKey(copy)] = copy; added++;
+      }
+    });
+    if (Array.isArray(obj.readers)) obj.readers.forEach((r) => { if (STATE.readers.indexOf(r) < 0) STATE.readers.push(r); });
+    markChanged();
+    return { mode: "merge", added, updated };
+  }
+  function afterJSONImport() {
+    if (STATE.readers.indexOf(activeReader) < 0) activeReader = STATE.readers[0];
+    rebuildFilters(); renderReaderList(); render();
+  }
+  $("#exportJsonBtn").addEventListener("click", async () => {
+    try { const fn = await exportJSON(); if (fn) console.log("Záloha uložena:", fn); }
+    catch (e) { alert("Export selhal: " + (e.message || e)); }
+  });
+  $("#importJsonBtn").addEventListener("click", () => {
+    $("#jsonFile").value = "";
+    const st = $("#jsonStatus"); st.style.display = "none";
+    openModal("#jsonModal");
+  });
+  $("#jsonClose").addEventListener("click", () => closeModal("#jsonModal"));
+  $("#jsonReplace").addEventListener("click", async () => {
+    const st = $("#jsonStatus"); st.style.display = "block"; st.className = "status-line";
+    try {
+      const obj = await readSelectedJSON();
+      if (!confirm("PŘEPSAT všechna aktuální data touto zálohou? Tuto akci nelze vzít zpět.")) { st.textContent = "Zrušeno."; return; }
+      const r = importJSONData(obj, "replace");
+      afterJSONImport();
+      st.className = "status-line ok";
+      st.textContent = "Obnoveno ze zálohy: " + r.count + " knih (přepsáno).";
+    } catch (e) { st.className = "status-line err"; st.textContent = "Chyba: " + (e.message || e); }
+  });
+  $("#jsonMerge").addEventListener("click", async () => {
+    const st = $("#jsonStatus"); st.style.display = "block"; st.className = "status-line";
+    try {
+      const obj = await readSelectedJSON();
+      const r = importJSONData(obj, "merge");
+      afterJSONImport();
+      st.className = "status-line ok";
+      st.textContent = "Sloučeno: přidáno " + r.added + ", aktualizováno " + r.updated + " knih.";
+    } catch (e) { st.className = "status-line err"; st.textContent = "Chyba: " + (e.message || e); }
+  });
+
+  // ---- MODÁL: SYNC ------------------------------------------
+  function refreshSyncModal() {
+    const cfg = getCfg();
+    $("#syncToken").value = cfg.token || "";
+    $("#syncGistId").value = cfg.gistId || "";
+    const connected = cfg.enabled && cfg.token && cfg.gistId;
+    $("#syncDisconnect").style.display = connected ? "" : "none";
+    $("#syncNow").style.display = connected ? "" : "none";
+    $("#syncConnect").textContent = connected ? "Uložit / Znovu připojit" : "Vytvořit / Připojit";
+    const stt = $("#syncStatus");
+    if (connected) { stt.className = "status-line ok"; stt.textContent = "Připojeno. Poslední sync: " + (cfg.lastSync ? new Date(cfg.lastSync).toLocaleString("cs") : "—"); }
+    else { stt.className = "status-line"; stt.textContent = "Nepřipojeno."; }
+    if (connected) { $("#gistIdReveal").style.display = "block"; $("#gistIdText").textContent = cfg.gistId; }
+    else $("#gistIdReveal").style.display = "none";
+  }
+  $("#syncBtn").addEventListener("click", () => { refreshSyncModal(); openModal("#syncModal"); });
+  $("#syncClose").addEventListener("click", () => closeModal("#syncModal"));
+  $("#syncConnect").addEventListener("click", async () => {
+    const token = $("#syncToken").value.trim();
+    const gistId = $("#syncGistId").value.trim();
+    const stt = $("#syncStatus");
+    if (!token) { stt.className = "status-line err"; stt.textContent = "Zadej GitHub token."; return; }
+    setCfg({ token });
+    stt.className = "status-line"; stt.textContent = "Pracuji…";
+    try {
+      if (!gistId) {
+        // vytvoř nový gist z aktuálních dat
+        const id = await gistCreate();
+        setCfg({ gistId: id, enabled: true, lastSync: Date.now() });
+        setSyncState("ok", "Synchronizováno");
+        refreshSyncModal();
+        stt.className = "status-line ok";
+        stt.textContent = "Vytvořeno. Zkopíruj si Gist ID níže na další zařízení.";
+      } else {
+        // připoj se a stáhni cloud
+        setCfg({ gistId, enabled: true });
+        const hasLocal = STATE.books && STATE.books.length;
+        if (hasLocal && !confirm("Připojit k existujícímu Gistu a STÁHNOUT cloud? Pokud je cloud novější, přepíše lokální data.")) {
+          stt.textContent = "Zrušeno."; return;
+        }
+        await doPull({ force: true });
+        refreshSyncModal();
+        stt.className = "status-line ok";
+        stt.textContent = "Připojeno a staženo.";
+      }
+    } catch (e) {
+      setSyncState("err", String(e.message || e));
+      stt.className = "status-line err"; stt.textContent = "Chyba: " + (e.message || e);
+    }
+  });
+  $("#syncNow").addEventListener("click", async () => {
+    const stt = $("#syncStatus"); stt.className = "status-line"; stt.textContent = "Synchronizuji…";
+    try { await doPull({ force: false }); await doPush(); refreshSyncModal(); stt.className = "status-line ok"; stt.textContent = "Hotovo."; }
+    catch (e) { stt.className = "status-line err"; stt.textContent = "Chyba: " + (e.message || e); }
+  });
+  $("#syncDisconnect").addEventListener("click", () => {
+    if (!confirm("Odpojit synchronizaci? Data zůstanou v tomto prohlížeči, jen se přestanou zrcadlit do Gistu. Token se odstraní.")) return;
+    setCfg({ token: "", enabled: false });
+    setSyncState("off", "Synchronizace vypnuta");
+    refreshSyncModal();
+  });
+
+  // ---- MODÁL HELPERY ----------------------------------------
+  function openModal(sel) { $(sel).classList.add("open"); }
+  function closeModal(sel) { $(sel).classList.remove("open"); }
+  $$(".modal-overlay").forEach((ov) => ov.addEventListener("click", (e) => { if (e.target === ov) ov.classList.remove("open"); }));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") $$(".modal-overlay.open").forEach((m) => m.classList.remove("open")); });
+
+  // ---- START ------------------------------------------------
+  function init() {
+    loadLocal();
+    activeReader = localStorage.getItem(LS_READER);
+    if (!activeReader || STATE.readers.indexOf(activeReader) < 0) activeReader = STATE.readers[0];
+    rebuildFilters();
+    render();
+    const cfg = getCfg();
+    if (cfg.enabled && cfg.token && cfg.gistId) {
+      setSyncState("syncing", "Stahuji…");
+      doPull({ force: false }).catch(() => {});
+    } else {
+      setSyncState("off", "Synchronizace vypnuta (klikni pro nastavení)");
+    }
+  }
+  init();
+
+  // export pro test (jen když existuje globální hook)
+  if (typeof window !== "undefined") {
+    window.__ctenar = { get STATE() { return STATE; }, importFromCSV, parseCSV, deriveStav, buildPayload, bookKey };
+  }
+})();
+</script>
+
+</body>
+</html>
