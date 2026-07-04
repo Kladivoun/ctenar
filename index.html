@@ -48,7 +48,7 @@
   /* === ZÁKLAD =============================================== */
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
-  html { background: var(--page); background-attachment: fixed; }
+  html { background: var(--page); background-attachment: fixed; font-size: 17px; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--page);
@@ -58,7 +58,7 @@
     display: flex;
     flex-direction: column;
     transition: color 0.2s ease;
-    font-size: 16.5px;
+    font-size: 1rem;
     line-height: 1.45;
   }
 
@@ -253,19 +253,19 @@
   table.books thead th:not(.no-sort):hover { color: var(--accent); }
   table.books tbody tr { transition: background 0.1s ease; }
   table.books tbody tr:hover { background: var(--accent-soft); }
-  .book-title { font-weight: 600; font-size: 1.02rem; }
+  .book-title { font-weight: 600; font-size: 1.12rem; }
   .book-sub { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
   .cell-track { white-space: nowrap; }
 
   /* přebaly */
-  .cell-cover { width: 62px; padding-right: 0 !important; }
+  .cell-cover { width: 80px; padding-right: 0 !important; }
   .cover {
-    width: 54px; height: 80px; border-radius: 6px; object-fit: cover;
+    width: 70px; height: 103px; border-radius: 6px; object-fit: cover;
     background: var(--surface-2); border: 1px solid var(--border); display: block;
     box-shadow: 0 2px 6px rgba(30,40,80,0.16);
   }
   .cover-ph {
-    width: 54px; height: 80px; border-radius: 6px; border: 1px solid var(--border);
+    width: 70px; height: 103px; border-radius: 6px; border: 1px solid var(--border);
     background: linear-gradient(135deg, var(--surface-2), var(--accent-soft));
     color: var(--text-muted);
     display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
@@ -273,7 +273,7 @@
   }
   .cover-click { cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; }
   .cover-click:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 6px 16px rgba(30,40,80,0.28); }
-  .cover-preview { width: 120px; height: 176px; }
+  .cover-preview { width: 156px; height: 230px; }
   .cover-row { display: flex; align-items: center; gap: 10px; }
   .sort-ind { font-size: 0.72rem; opacity: 0.85; margin-left: 3px; }
   .book-title.clickable { cursor: pointer; }
@@ -353,12 +353,15 @@
   .detail-stars .stars { font-size: 1.35rem; }
   .stars.readonly { cursor: default; }
   .detail-grid {
-    display: grid; grid-template-columns: auto 1fr; gap: 8px 16px;
-    margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border);
-    font-size: 0.98rem;
+    display: flex; flex-wrap: wrap; gap: 8px 10px;
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);
   }
-  .dg-label { color: var(--text-muted); }
-  .dg-value { font-weight: 500; }
+  .dg-item {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 6px 12px; min-width: 82px;
+  }
+  .dg-item .dg-label { display: block; color: var(--text-muted); font-size: 0.78rem; }
+  .dg-item .dg-value { font-weight: 600; font-size: 0.98rem; }
 
   /* === ZÁPATÍ ============================================== */
   .app-footer {
@@ -378,7 +381,7 @@
   }
   /* Mobil: tabulka -> karty, větší a čitelnější písmo */
   @media (max-width: 700px) {
-    body { font-size: 17px; }
+    body { font-size: 1.06rem; }
     .app-header { flex-wrap: wrap; height: auto; padding: 10px 14px; gap: 8px; }
     .app-header h1 { font-size: 1.2rem; }
     main { padding: 14px; }
@@ -425,8 +428,8 @@
     /* přebal + název nahoře vedle sebe */
     table.books td.cell-cover { width: auto; float: left; margin: 0 14px 4px 0; padding: 0 !important; }
     table.books td.cell-cover::before { content: none; }
-    .cover, .cover-ph { width: 64px; height: 94px; }
-    .cover-preview, .cover-ph.cover-preview { width: 108px; height: 158px; }
+    .cover, .cover-ph { width: 82px; height: 120px; }
+    .cover-preview, .cover-ph.cover-preview { width: 150px; height: 221px; }
     table.books td.cell-main { display: block; overflow: hidden; }
     table.books td.cell-main::before { content: none; }
     .book-title { font-size: 1.12rem; }
@@ -445,6 +448,93 @@
     .theme-toggle, .sync-btn { padding: 6px 10px; }
     .btn { padding: 9px 11px; }
   }
+
+  /* === LIŠTA MODULŮ (úroveň 1) ============================= */
+  .modnav {
+    display: flex; gap: 6px;
+    max-width: 1400px; width: 100%; margin: 0 auto;
+    padding: 12px 26px 0;
+  }
+  .modnav-btn {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font: inherit; font-size: 1.02rem; font-weight: 600;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 16px;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .modnav-btn:hover { color: var(--text); border-color: var(--accent); }
+  .modnav-btn.active {
+    color: var(--accent-text);
+    background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+    box-shadow: var(--shadow);
+  }
+
+  /* === FILTRAČNÍ ŘÁDEK (úroveň 2) ========================= */
+  .toolbar-filters {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+  }
+  .toolbar-filters .filters-label {
+    font-size: 0.82rem; color: var(--text-muted); font-weight: 600; margin-right: 2px;
+  }
+  .toolbar-filters select { background: var(--bg); font-size: 0.92rem; }
+
+  /* === PŘEČTENO (checkbox + datum na 1 řádku) ============= */
+  .read-inline { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .read-date-input { padding: 4px 8px !important; font-size: 0.82rem !important; }
+
+  /* === MODULY ============================================= */
+  .module[hidden] { display: none; }
+
+  /* === STATISTIKY ========================================= */
+  .stats-section { margin-bottom: 26px; }
+  .stats-section h3 { font-size: 1.08rem; margin: 0 0 12px; color: var(--accent); }
+  .stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow);
+  }
+  .stat-card .num { font-size: 1.9rem; font-weight: 700; color: var(--text); line-height: 1.1; }
+  .stat-card .lbl { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+  .bar-list { display: flex; flex-direction: column; gap: 9px; }
+  .bar-row { display: grid; grid-template-columns: 140px 1fr 34px; align-items: center; gap: 10px; font-size: 0.92rem; }
+  .bar-row .bar-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { background: var(--surface-2); border-radius: 999px; height: 12px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 999px; }
+  .bar-row .bar-val { color: var(--text-muted); font-size: 0.85rem; text-align: right; }
+  .top-list { list-style: none; margin: 0; padding: 0; }
+  .top-list li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 2px; border-bottom: 1px solid var(--border); font-size: 0.96rem; }
+  .top-list li:last-child { border-bottom: none; }
+  .top-list .tl-stars { color: var(--star); white-space: nowrap; }
+
+  /* === NASTAVENÍ ========================================= */
+  .settings { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .settings-group {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow);
+  }
+  .settings-group h3 { margin: 0 0 4px; font-size: 1.04rem; color: var(--accent); }
+  .settings-group p { margin: 0 0 12px; font-size: 0.85rem; color: var(--text-muted); }
+  .settings-group .btn { width: 100%; margin-top: 8px; text-align: center; }
+
+  /* === MOBIL: moduly / statistiky / nastavení ============= */
+  @media (max-width: 700px) {
+    .modnav { padding: 8px 14px 0; gap: 5px; }
+    .modnav-btn { font-size: 0.9rem; padding: 10px 6px; flex-direction: column; gap: 3px; }
+    .stat-cards { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+    .bar-row { grid-template-columns: 104px 1fr 30px; }
+    .settings { grid-template-columns: 1fr; }
+    .reader-box { flex: 1; }
+  }
 </style>
 </head>
 <body>
@@ -452,6 +542,10 @@
 <header class="app-header">
   <h1><span class="logo-emoji" aria-hidden="true">📚</span> Čtenář</h1>
   <div class="header-actions">
+    <div class="reader-box">
+      <label for="readerSel">Čtenář:</label>
+      <select id="readerSel"></select>
+    </div>
     <button class="sync-btn" id="syncBtn" type="button" data-state="off" title="Synchronizace přes GitHub Gist">
       <span class="sync-icon" id="syncIcon" aria-hidden="true">☁</span>
     </button>
@@ -470,60 +564,89 @@
   </div>
 </header>
 
+<nav class="modnav" id="modnav">
+  <button class="modnav-btn active" data-mod="knihovna" type="button">📚 Knihovna</button>
+  <button class="modnav-btn" data-mod="statistiky" type="button">📊 Statistiky</button>
+  <button class="modnav-btn" data-mod="nastaveni" type="button">⚙️ Nastavení</button>
+</nav>
+
 <main>
-  <div class="toolbar">
-    <div class="reader-box">
-      <label for="readerSel">Čtenář:</label>
-      <select id="readerSel"></select>
-      <button class="btn-icon" id="manageReaders" title="Spravovat čtenáře">⚙</button>
+  <!-- ===== MODUL: KNIHOVNA ===== -->
+  <section class="module" data-module="knihovna">
+    <div class="toolbar toolbar-actions">
+      <input type="search" class="grow" id="search" placeholder="Hledat název / autora / sérii…" autocomplete="off">
+      <button class="btn btn-primary" id="addBook">+ Kniha</button>
     </div>
-    <input type="search" class="grow" id="search" placeholder="Hledat název / autora / sérii…" autocomplete="off">
-    <select id="fSerie"><option value="">Všechny série</option></select>
-    <select id="fZanr"><option value="">Všechny žánry</option></select>
-    <select id="fStav">
-      <option value="">Stav: vše</option>
-      <option value="vlastněno">Vlastněno</option>
-      <option value="k nákupu">K nákupu</option>
-    </select>
-    <select id="fTrack">
-      <option value="">Filtr čtenáře: vše</option>
-      <option value="ctecka">Ve čtečce</option>
-      <option value="notctecka">Není ve čtečce</option>
-      <option value="precteno">Přečteno</option>
-      <option value="neprecteno">Nepřečteno</option>
-    </select>
-    <button class="btn btn-primary" id="addBook">+ Kniha</button>
-    <button class="btn" id="importBtn">⤓ Import z tabulky</button>
-    <button class="btn" id="exportJsonBtn" title="Uložit zálohu všech dat do JSON souboru">⬇ Export JSON</button>
-    <button class="btn" id="importJsonBtn" title="Obnovit data ze zálohy JSON">⬆ Import JSON</button>
-  </div>
+    <div class="toolbar toolbar-filters">
+      <span class="filters-label">Filtry:</span>
+      <select id="fSerie"><option value="">Všechny série</option></select>
+      <select id="fZanr"><option value="">Všechny žánry</option></select>
+      <select id="fStav">
+        <option value="">Stav: vše</option>
+        <option value="vlastněno">Vlastněno</option>
+        <option value="k nákupu">K nákupu</option>
+      </select>
+      <select id="fTrack">
+        <option value="">Filtr čtenáře: vše</option>
+        <option value="ctecka">Ve čtečce</option>
+        <option value="notctecka">Není ve čtečce</option>
+        <option value="precteno">Přečteno</option>
+        <option value="neprecteno">Nepřečteno</option>
+      </select>
+      <button class="btn btn-sm" id="clearFilters">Vymazat filtry</button>
+    </div>
 
-  <div class="stats" id="stats"></div>
+    <div class="table-wrap">
+      <table class="books">
+        <thead>
+          <tr id="headRow">
+            <th class="no-sort"></th>
+            <th data-sort="kniha">Kniha</th>
+            <th data-sort="autor">Autor</th>
+            <th data-sort="zanr">Žánr</th>
+            <th data-sort="t_ctecka">Čtečka</th>
+            <th data-sort="t_precteno">Přečteno</th>
+            <th data-sort="t_hodnoceni">Hodnocení</th>
+            <th class="no-sort"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="emptyMsg" style="display:none">Žádná kniha neodpovídá filtru.</div>
+  </section>
 
-  <div class="table-wrap">
-    <table class="books">
-      <thead>
-        <tr id="headRow">
-          <th class="no-sort"></th>
-          <th data-sort="kniha">Kniha</th>
-          <th data-sort="autor">Autor</th>
-          <th data-sort="zanr">Žánr</th>
-          <th data-sort="eshop">eShop</th>
-          <th data-sort="stav">Stav</th>
-          <th data-sort="t_ctecka">Čtečka</th>
-          <th data-sort="t_precteno">Přečteno</th>
-          <th data-sort="t_hodnoceni">Hodnocení</th>
-          <th class="no-sort"></th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
-  <div class="empty" id="emptyMsg" style="display:none">Žádná kniha neodpovídá filtru.</div>
+  <!-- ===== MODUL: STATISTIKY ===== -->
+  <section class="module" data-module="statistiky" hidden>
+    <div id="statsPanel"></div>
+  </section>
+
+  <!-- ===== MODUL: NASTAVENÍ ===== -->
+  <section class="module" data-module="nastaveni" hidden>
+    <div class="settings">
+      <div class="settings-group">
+        <h3>Data</h3>
+        <p>Import katalogu z tabulky a zálohování všech dat do souboru.</p>
+        <button class="btn" id="importBtn">⤓ Import z Google tabulky</button>
+        <button class="btn" id="exportJsonBtn">⬇ Export JSON (záloha)</button>
+        <button class="btn" id="importJsonBtn">⬆ Import JSON (obnova)</button>
+      </div>
+      <div class="settings-group">
+        <h3>Čtenáři</h3>
+        <p>Přidání, přejmenování nebo odebrání čtenářů.</p>
+        <button class="btn" id="manageReaders">Spravovat čtenáře</button>
+      </div>
+      <div class="settings-group">
+        <h3>Synchronizace</h3>
+        <p>Zrcadlení dat mezi zařízeními přes soukromý GitHub Gist.</p>
+        <button class="btn" id="syncSettingsBtn">Nastavit synchronizaci</button>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer class="app-footer">
-  (c) 2026 KeCl v1.5
+  (c) 2026 KeCl v1.6
 </footer>
 
 <!-- ===== MODÁL: KNIHA ===== -->
@@ -656,18 +779,20 @@
 
 <script>
 /* ============================================================
-   ČTENÁŘ – (c) 2026 KeCl v1.5
+   ČTENÁŘ – (c) 2026 KeCl v1.6
    Single-file HTML app. Data v localStorage + volitelná
    synchronizace přes GitHub Gist (last-write-wins).
    ============================================================ */
 (function () {
   "use strict";
 
-  const APP_VERSION = "1.5";
+  const APP_VERSION = "1.6";
   const LS_DATA    = "ctenar-data";
   const LS_CFG     = "ctenar-gistcfg";
   const LS_UPDATED = "ctenar-updatedAt";
   const LS_READER  = "ctenar-active-reader"; // jen UI, nesynchronizuje se
+  const LS_MODULE  = "ctenar-active-module";  // jen UI
+  const LS_FILTERS = "ctenar-filters";        // jen UI
   const GIST_FILE  = "ctenar-sync.json";
   const GIST_API   = "https://api.github.com/gists";
 
@@ -1028,12 +1153,13 @@
       const serieSub = [b.serie, b.dil ? "díl " + b.dil : ""].filter(Boolean).join(" · ");
       const stranSub = b.pocetStran ? b.pocetStran + " s." : "";
       const sub = [serieSub, stranSub].filter(Boolean).join(" · ");
-      const stavChip = b.stav === "vlastněno"
-        ? '<span class="chip owned">vlastněno</span>'
-        : '<span class="chip wish">k nákupu</span>';
       const cover = b.coverUrl
         ? `<img class="cover cover-click" src="${esc(b.coverUrl)}" alt="" loading="lazy" data-detail onerror="this.outerHTML='<div class=&quot;cover-ph cover-click&quot; data-detail>📖</div>'">`
         : `<div class="cover-ph cover-click" data-detail>📖</div>`;
+      const readExtra = t.precteno
+        ? `<input type="date" class="read-date-input" data-k="datum" value="${esc(dateVal(t.datum))}">` +
+          (t.datum && !/^\d{4}-/.test(t.datum) ? `<span class="read-date">${esc(t.datum)}</span>` : "")
+        : "";
       return `<tr data-id="${b.id}">
         <td class="cell-cover">${cover}</td>
         <td class="cell-main">
@@ -1042,14 +1168,8 @@
         </td>
         <td data-l="Autor">${esc(b.autor)}</td>
         <td data-l="Žánr">${b.zanr ? `<span class="chip">${esc(b.zanr)}</span>` : ""}</td>
-        <td data-l="eShop">${esc(b.eshop)}</td>
-        <td data-l="Stav">${stavChip}</td>
         <td data-l="Čtečka" class="cell-track"><input type="checkbox" class="chk" data-k="veCtecce" ${t.veCtecce ? "checked" : ""}></td>
-        <td data-l="Přečteno" class="cell-track">
-          <input type="checkbox" class="chk" data-k="precteno" ${t.precteno ? "checked" : ""}>
-          ${t.precteno ? `<div class="read-date"><input type="date" data-k="datum" value="${esc(dateVal(t.datum))}" style="padding:3px 6px;font-size:0.8rem"></div>` : ""}
-          ${t.precteno && t.datum && !/^\d{4}-/.test(t.datum) ? `<div class="read-date">${esc(t.datum)}</div>` : ""}
-        </td>
+        <td data-l="Přečteno" class="cell-track cell-read"><span class="read-inline"><input type="checkbox" class="chk" data-k="precteno" ${t.precteno ? "checked" : ""}>${readExtra}</span></td>
         <td data-l="Hodnocení" class="cell-track">${starHtml(t.hodnoceni || 0)}</td>
         <td data-l="" class="cell-track"><button class="btn-icon" data-edit title="Upravit knihu">⋯</button></td>
       </tr>`;
@@ -1067,15 +1187,74 @@
   function dateVal(d) { return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : ""; }
 
   function renderStats() {
+    const panel = $("#statsPanel"); if (!panel) return;
     const total = STATE.books.length;
     const owned = STATE.books.filter((b) => b.stav === "vlastněno").length;
-    let inReader = 0, read = 0;
-    STATE.books.forEach((b) => { const t = (b.tracking && b.tracking[activeReader]) || {}; if (t.veCtecce) inReader++; if (t.precteno) read++; });
-    $("#stats").innerHTML =
-      `<span class="stat">Knih celkem: <b>${total}</b></span>` +
-      `<span class="stat">Vlastněno: <b>${owned}</b></span>` +
-      `<span class="stat">${esc(activeReader)} – ve čtečce: <b>${inReader}</b></span>` +
-      `<span class="stat">${esc(activeReader)} – přečteno: <b>${read}</b></span>`;
+    const wish  = total - owned;
+    const zanryCnt = new Set(STATE.books.map((b) => b.zanr).filter(Boolean)).size;
+    const serieCnt = new Set(STATE.books.map((b) => b.serie).filter(Boolean)).size;
+
+    let inReader = 0, read = 0, rated = 0, sumR = 0;
+    STATE.books.forEach((b) => {
+      const t = (b.tracking && b.tracking[activeReader]) || {};
+      if (t.veCtecce) inReader++;
+      if (t.precteno) read++;
+      if (t.hodnoceni) { rated++; sumR += t.hodnoceni; }
+    });
+    const unread = total - read;
+    const pct = total ? Math.round(read / total * 100) : 0;
+    const avg = rated ? (sumR / rated).toFixed(1) : "—";
+
+    // rozdělení podle žánru
+    const gc = {};
+    STATE.books.forEach((b) => { if (b.zanr) gc[b.zanr] = (gc[b.zanr] || 0) + 1; });
+    const gtop = Object.entries(gc).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const gmax = gtop.length ? gtop[0][1] : 1;
+
+    // nejlépe hodnocené (aktivní čtenář)
+    const topRated = STATE.books
+      .map((b) => ({ b, h: ((b.tracking && b.tracking[activeReader]) || {}).hodnoceni || 0 }))
+      .filter((x) => x.h > 0)
+      .sort((a, b) => b.h - a.h)
+      .slice(0, 5);
+
+    const card = (num, lbl) => `<div class="stat-card"><div class="num">${num}</div><div class="lbl">${lbl}</div></div>`;
+
+    let html = "";
+    html += `<div class="stats-section"><h3>Knihovna</h3><div class="stat-cards">` +
+      card(total, "Knih celkem") +
+      card(owned, "Vlastněno") +
+      card(wish, "K nákupu") +
+      card(zanryCnt, "Žánrů") +
+      card(serieCnt, "Sérií") +
+      `</div></div>`;
+
+    html += `<div class="stats-section"><h3>Čtenář: ${esc(activeReader)}</h3><div class="stat-cards">` +
+      card(read, "Přečteno") +
+      card(unread, "Nepřečteno") +
+      card(pct + " %", "Přečteno z celku") +
+      card(inReader, "Ve čtečce") +
+      card(avg, "Ø hodnocení") +
+      card(rated, "Hodnocených") +
+      `</div></div>`;
+
+    if (gtop.length) {
+      html += `<div class="stats-section"><h3>Knihy podle žánru</h3><div class="bar-list">` +
+        gtop.map(([g, n]) =>
+          `<div class="bar-row"><span class="bar-name">${esc(g)}</span>` +
+          `<span class="bar-track"><span class="bar-fill" style="width:${Math.round(n / gmax * 100)}%"></span></span>` +
+          `<span class="bar-val">${n}</span></div>`
+        ).join("") + `</div></div>`;
+    }
+
+    if (topRated.length) {
+      html += `<div class="stats-section"><h3>Nejlépe hodnocené (${esc(activeReader)})</h3><ul class="top-list">` +
+        topRated.map((x) =>
+          `<li><span>${esc(x.b.kniha)}</span><span class="tl-stars">${"★".repeat(x.h)}${"☆".repeat(5 - x.h)}</span></li>`
+        ).join("") + `</ul></div>`;
+    }
+
+    panel.innerHTML = html;
   }
 
   // ---- UDÁLOSTI: TABULKA ------------------------------------
@@ -1117,8 +1296,46 @@
   });
 
   // filtry
-  ["#search", "#fSerie", "#fZanr", "#fStav", "#fTrack"].forEach((s) => $(s).addEventListener("input", render));
+  ["#search", "#fSerie", "#fZanr", "#fStav", "#fTrack"].forEach((s) =>
+    $(s).addEventListener("input", () => { saveFilters(); render(); }));
+  $("#clearFilters").addEventListener("click", () => {
+    $("#search").value = ""; $("#fSerie").value = ""; $("#fZanr").value = "";
+    $("#fStav").value = ""; $("#fTrack").value = "";
+    saveFilters(); render();
+  });
   $("#readerSel").addEventListener("change", (e) => { activeReader = e.target.value; localStorage.setItem(LS_READER, activeReader); render(); });
+
+  // perzistence filtrů (jen UI)
+  function saveFilters() {
+    try {
+      localStorage.setItem(LS_FILTERS, JSON.stringify({
+        q: $("#search").value, s: $("#fSerie").value, z: $("#fZanr").value,
+        st: $("#fStav").value, t: $("#fTrack").value
+      }));
+    } catch (e) {}
+  }
+  function loadFilters() {
+    try {
+      const f = JSON.parse(localStorage.getItem(LS_FILTERS) || "{}");
+      if (f.q)  $("#search").value = f.q;
+      if (f.s)  $("#fSerie").value = f.s;
+      if (f.z)  $("#fZanr").value  = f.z;
+      if (f.st) $("#fStav").value  = f.st;
+      if (f.t)  $("#fTrack").value = f.t;
+    } catch (e) {}
+  }
+
+  // moduly (úroveň 1)
+  function switchModule(mod) {
+    if (!mod) mod = "knihovna";
+    $$(".module").forEach((s) => { s.hidden = (s.dataset.module !== mod); });
+    $$(".modnav-btn").forEach((b) => b.classList.toggle("active", b.dataset.mod === mod));
+    try { localStorage.setItem(LS_MODULE, mod); } catch (e) {}
+    if (mod === "statistiky") renderStats();
+  }
+  $("#modnav").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-mod]"); if (b) switchModule(b.dataset.mod);
+  });
 
   // ---- MODÁL: KNIHA -----------------------------------------
   let editingId = null;
@@ -1187,7 +1404,8 @@
     return d; // volný text (např. jen rok)
   }
   function gRow(label, value) {
-    return `<div class="dg-label">${esc(label)}</div><div class="dg-value">${value == null || value === "" ? "—" : esc(value)}</div>`;
+    const v = (value == null || value === "") ? "—" : esc(value);
+    return `<div class="dg-item"><span class="dg-label">${esc(label)}</span><span class="dg-value">${v}</span></div>`;
   }
   function openDetail(b) {
     detailBookId = b.id;
@@ -1413,6 +1631,7 @@
     else $("#gistIdReveal").style.display = "none";
   }
   $("#syncBtn").addEventListener("click", () => { refreshSyncModal(); openModal("#syncModal"); });
+  $("#syncSettingsBtn").addEventListener("click", () => { refreshSyncModal(); openModal("#syncModal"); });
   $("#syncClose").addEventListener("click", () => closeModal("#syncModal"));
   $("#syncConnect").addEventListener("click", async () => {
     const token = $("#syncToken").value.trim();
@@ -1471,7 +1690,11 @@
     activeReader = localStorage.getItem(LS_READER);
     if (!activeReader || STATE.readers.indexOf(activeReader) < 0) activeReader = STATE.readers[0];
     rebuildFilters();
+    loadFilters();
     render();
+    let startMod = "knihovna";
+    try { startMod = localStorage.getItem(LS_MODULE) || "knihovna"; } catch (e) {}
+    switchModule(startMod);
     const cfg = getCfg();
     if (cfg.enabled && cfg.token && cfg.gistId) {
       setSyncState("syncing", "Stahuji…");
