@@ -81,15 +81,32 @@
   }
   .app-header h1 {
     margin: 0;
-    font-size: 1.4rem;
-    font-weight: 700;
+    font-size: 1.75rem;
+    font-weight: 800;
     letter-spacing: -0.01em;
     display: flex;
     align-items: center;
     gap: 9px;
     color: var(--accent);
+    white-space: nowrap;
   }
-  .app-header h1 .logo-emoji { font-size: 1.5rem; }
+  .app-header h1 .logo-emoji { font-size: 2rem; }
+  .header-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .reader-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 5px 12px 5px 11px;
+    min-width: 0;
+  }
+  .reader-pill .reader-ico { font-size: 1.05rem; }
+  .reader-pill select {
+    font-size: 1.12rem; font-weight: 700; color: var(--accent);
+    background: transparent; border: none; padding: 2px 2px;
+    max-width: 170px; text-overflow: ellipsis; cursor: pointer;
+  }
+  .reader-pill select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
   .header-actions {
     display: flex;
     align-items: center;
@@ -274,6 +291,7 @@
   .cover-click { cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; }
   .cover-click:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 6px 16px rgba(30,40,80,0.28); }
   .cover-preview { width: 156px; height: 230px; }
+  .cover-edit, .cover-ph.cover-edit { width: 74px; height: 108px; }
   .cover-row { display: flex; align-items: center; gap: 10px; }
   .sort-ind { font-size: 0.72rem; opacity: 0.85; margin-left: 3px; }
   .book-title.clickable { cursor: pointer; }
@@ -322,8 +340,18 @@
     width: 100%;
     max-width: 540px;
     padding: 22px 24px;
+    position: relative;
   }
-  .modal h2 { margin: 0 0 4px; font-size: 1.1rem; }
+  .modal h2 { margin: 0 0 4px; font-size: 1.1rem; padding-right: 30px; }
+  .modal-x {
+    position: absolute; top: 12px; right: 12px;
+    width: 34px; height: 34px; border-radius: 9px;
+    border: none; background: var(--surface-2); color: var(--text-muted);
+    font-size: 1.45rem; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2;
+  }
+  .modal-x:hover { background: var(--accent-soft); color: var(--accent); }
   .modal .modal-desc { margin: 0 0 16px; font-size: 0.83rem; color: var(--text-muted); }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .form-grid .full { grid-column: 1 / -1; }
@@ -382,8 +410,15 @@
   /* Mobil: tabulka -> karty, větší a čitelnější písmo */
   @media (max-width: 700px) {
     body { font-size: 1.06rem; }
-    .app-header { flex-wrap: wrap; height: auto; padding: 10px 14px; gap: 8px; }
-    .app-header h1 { font-size: 1.2rem; }
+    .app-header { flex-wrap: nowrap; height: auto; padding: 9px 12px; gap: 8px; }
+    .app-header h1 { font-size: 1.4rem; }
+    .app-header h1 .logo-emoji { font-size: 1.65rem; }
+    .header-left { gap: 9px; flex: 1 1 auto; min-width: 0; }
+    .header-actions { flex: 0 0 auto; gap: 6px; }
+    .reader-pill { padding: 4px 10px 4px 9px; }
+    .reader-pill select { font-size: 1.05rem; max-width: 118px; }
+    .theme-toggle .theme-toggle-label, .theme-toggle .theme-toggle-hint { display: none; }
+    .theme-toggle { padding: 7px 10px; }
     main { padding: 14px; }
     .toolbar { gap: 8px; }
     .toolbar .grow { min-width: 100%; }
@@ -458,12 +493,12 @@
   .modnav-btn {
     flex: 1;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    font: inherit; font-size: 1.02rem; font-weight: 600;
+    font: inherit; font-size: 1.15rem; font-weight: 600;
     color: var(--text-muted);
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 13px 16px;
+    padding: 15px 18px;
     cursor: pointer;
     transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
   }
@@ -474,6 +509,7 @@
     border-color: transparent;
     box-shadow: var(--shadow);
   }
+  .modnav-btn.modnav-icon { flex: 0 0 auto; font-size: 1.5rem; padding: 13px 18px; }
 
   /* === FILTRAČNÍ ŘÁDEK (úroveň 2) ========================= */
   .toolbar-filters {
@@ -494,6 +530,7 @@
 
   /* === MODULY ============================================= */
   .module[hidden] { display: none; }
+  .cell-wish-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; white-space: nowrap; }
 
   /* === STATISTIKY ========================================= */
   .stats-section { margin-bottom: 26px; }
@@ -528,8 +565,9 @@
 
   /* === MOBIL: moduly / statistiky / nastavení ============= */
   @media (max-width: 700px) {
-    .modnav { padding: 8px 14px 0; gap: 5px; }
-    .modnav-btn { font-size: 0.9rem; padding: 10px 6px; flex-direction: column; gap: 3px; }
+    .modnav { padding: 8px 12px 0; gap: 5px; }
+    .modnav-btn { font-size: 1rem; padding: 11px 4px; flex-direction: column; gap: 3px; }
+    .modnav-btn.modnav-icon { font-size: 1.4rem; padding: 11px 12px; }
     .stat-cards { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
     .bar-row { grid-template-columns: 104px 1fr 30px; }
     .settings { grid-template-columns: 1fr; }
@@ -540,12 +578,14 @@
 <body>
 
 <header class="app-header">
-  <h1><span class="logo-emoji" aria-hidden="true">📚</span> Čtenář</h1>
-  <div class="header-actions">
-    <div class="reader-box">
-      <label for="readerSel">Čtenář:</label>
-      <select id="readerSel"></select>
+  <div class="header-left">
+    <h1><span class="logo-emoji" aria-hidden="true">📚</span> Čtenář</h1>
+    <div class="reader-pill" title="Aktuálně vybraný čtenář">
+      <span class="reader-ico" aria-hidden="true">👤</span>
+      <select id="readerSel" aria-label="Vybraný čtenář"></select>
     </div>
+  </div>
+  <div class="header-actions">
     <button class="sync-btn" id="syncBtn" type="button" data-state="off" title="Synchronizace přes GitHub Gist">
       <span class="sync-icon" id="syncIcon" aria-hidden="true">☁</span>
     </button>
@@ -567,7 +607,8 @@
 <nav class="modnav" id="modnav">
   <button class="modnav-btn active" data-mod="knihovna" type="button">📚 Knihovna</button>
   <button class="modnav-btn" data-mod="statistiky" type="button">📊 Statistiky</button>
-  <button class="modnav-btn" data-mod="nastaveni" type="button">⚙️ Nastavení</button>
+  <button class="modnav-btn" data-mod="prani" type="button">⭐ Přání</button>
+  <button class="modnav-btn modnav-icon" data-mod="nastaveni" type="button" title="Nastavení" aria-label="Nastavení">⚙️</button>
 </nav>
 
 <main>
@@ -581,11 +622,6 @@
       <span class="filters-label">Filtry:</span>
       <select id="fSerie"><option value="">Všechny série</option></select>
       <select id="fZanr"><option value="">Všechny žánry</option></select>
-      <select id="fStav">
-        <option value="">Stav: vše</option>
-        <option value="vlastněno">Vlastněno</option>
-        <option value="k nákupu">K nákupu</option>
-      </select>
       <select id="fTrack">
         <option value="">Filtr čtenáře: vše</option>
         <option value="ctecka">Ve čtečce</option>
@@ -621,6 +657,29 @@
     <div id="statsPanel"></div>
   </section>
 
+  <!-- ===== MODUL: PŘÁNÍ ===== -->
+  <section class="module" data-module="prani" hidden>
+    <div class="toolbar toolbar-actions">
+      <input type="search" class="grow" id="wishSearch" placeholder="Hledat v přáních…" autocomplete="off">
+      <button class="btn btn-primary" id="addWish">+ Přání</button>
+    </div>
+    <div class="table-wrap">
+      <table class="books">
+        <thead>
+          <tr>
+            <th class="no-sort"></th>
+            <th>Kniha</th>
+            <th>Žánr</th>
+            <th>Kde koupit</th>
+            <th class="no-sort"></th>
+          </tr>
+        </thead>
+        <tbody id="wishBody"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="wishEmpty" style="display:none">Zatím žádná přání. Přidej knihu, kterou si chceš pořídit.</div>
+  </section>
+
   <!-- ===== MODUL: NASTAVENÍ ===== -->
   <section class="module" data-module="nastaveni" hidden>
     <div class="settings">
@@ -646,12 +705,13 @@
 </main>
 
 <footer class="app-footer">
-  (c) 2026 KeCl v1.6
+  (c) 2026 KeCl v1.7
 </footer>
 
 <!-- ===== MODÁL: KNIHA ===== -->
 <div class="modal-overlay" id="bookModal">
   <div class="modal">
+    <button class="modal-x" type="button" aria-label="Zavřít">×</button>
     <h2 id="bookModalTitle">Přidat knihu</h2>
     <div class="form-grid">
       <div class="field full"><label>Název knihy *</label><input type="text" id="mKniha"></div>
@@ -688,6 +748,7 @@
 <!-- ===== MODÁL: DETAIL KNIHY ===== -->
 <div class="modal-overlay" id="detailModal">
   <div class="modal detail-modal">
+    <button class="modal-x" type="button" aria-label="Zavřít">×</button>
     <div class="detail-head">
       <div id="dCover"></div>
       <div class="detail-metahead">
@@ -712,6 +773,7 @@
 <!-- ===== MODÁL: SPRÁVA ČTENÁŘŮ ===== -->
 <div class="modal-overlay" id="readersModal">
   <div class="modal">
+    <button class="modal-x" type="button" aria-label="Zavřít">×</button>
     <h2>Čtenáři</h2>
     <p class="modal-desc">Přejmenování ani smazání čtenáře nesmaže data ostatních.</p>
     <ul class="reader-list" id="readerListUI"></ul>
@@ -728,6 +790,7 @@
 <!-- ===== MODÁL: IMPORT ===== -->
 <div class="modal-overlay" id="importModal">
   <div class="modal">
+    <button class="modal-x" type="button" aria-label="Zavřít">×</button>
     <h2>Import z Google tabulky</h2>
     <p class="modal-desc">Vlož odkaz na <b>publikovanou</b> tabulku ve formátu CSV. V Google Sheets: Soubor → Sdílet → Publikovat na web → vyber list → formát <b>CSV</b> → zkopíruj odkaz sem. Import knihy <b>přidá nebo aktualizuje</b> podle autora+názvu; tvůj tracking (čtečka, přečteno, hodnocení, poznámky) zůstane zachován.</p>
     <div class="field full"><label>CSV odkaz publikované tabulky</label><input type="url" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?gid=0&single=true&output=csv"></div>
@@ -742,6 +805,7 @@
 <!-- ===== MODÁL: IMPORT JSON (záloha) ===== -->
 <div class="modal-overlay" id="jsonModal">
   <div class="modal">
+    <button class="modal-x" type="button" aria-label="Zavřít">×</button>
     <h2>Obnova ze zálohy (JSON)</h2>
     <p class="modal-desc">Vyber JSON zálohu vytvořenou tlačítkem <b>Export JSON</b>.<br>
       <b>Přepsat</b> = nahradí veškerá aktuální data obsahem zálohy (nevratné).<br>
@@ -759,6 +823,7 @@
 <!-- ===== MODÁL: SYNC ===== -->
 <div class="modal-overlay" id="syncModal">
   <div class="modal">
+    <button class="modal-x" type="button" aria-label="Zavřít">×</button>
     <h2>Synchronizace (GitHub Gist)</h2>
     <p class="modal-desc">Data se zrcadlí do <b>soukromého</b> GitHub Gistu, takže je máš na všech zařízeních. Token i Gist ID se ukládají <b>jen v tomto prohlížeči</b> (localStorage), nikam se neposílají. Token je citlivý údaj – chovej se k němu jako k heslu.</p>
     <div class="field full"><label>GitHub token (classic, oprávnění pouze „gist")</label><input type="password" id="syncToken" placeholder="ghp_…" autocomplete="off"></div>
@@ -779,14 +844,14 @@
 
 <script>
 /* ============================================================
-   ČTENÁŘ – (c) 2026 KeCl v1.6
+   ČTENÁŘ – (c) 2026 KeCl v1.7
    Single-file HTML app. Data v localStorage + volitelná
    synchronizace přes GitHub Gist (last-write-wins).
    ============================================================ */
 (function () {
   "use strict";
 
-  const APP_VERSION = "1.6";
+  const APP_VERSION = "1.7";
   const LS_DATA    = "ctenar-data";
   const LS_CFG     = "ctenar-gistcfg";
   const LS_UPDATED = "ctenar-updatedAt";
@@ -1105,11 +1170,11 @@
 
   function currentFiltered() {
     const q = norm($("#search").value);
-    const fs = $("#fSerie").value, fz = $("#fZanr").value, fst = $("#fStav").value, ft = $("#fTrack").value;
+    const fs = $("#fSerie").value, fz = $("#fZanr").value, ft = $("#fTrack").value;
     let list = STATE.books.filter((b) => {
+      if (b.stav !== "vlastněno") return false; // Knihovna = jen vlastněné; k nákupu jsou v Přáních
       if (fs && b.serie !== fs) return false;
       if (fz && b.zanr !== fz) return false;
-      if (fst && b.stav !== fst) return false;
       if (q) { const hay = norm(b.kniha + " " + b.autor + " " + b.serie); if (hay.indexOf(q) < 0) return false; }
       if (ft) {
         const t = (b.tracking && b.tracking[activeReader]) || {};
@@ -1177,6 +1242,37 @@
     $("#emptyMsg").style.display = list.length ? "none" : "block";
     updateSortIndicators();
     renderStats();
+    renderWishlist();
+  }
+
+  // ---- RENDER: PŘÁNÍ (knihy „k nákupu") ---------------------
+  function renderWishlist() {
+    const tb = $("#wishBody"); if (!tb) return;
+    const ws = $("#wishSearch");
+    const q = norm(ws ? ws.value : "");
+    let list = STATE.books.filter((b) => b.stav !== "vlastněno");
+    if (q) list = list.filter((b) => norm(b.kniha + " " + b.autor + " " + b.serie).indexOf(q) >= 0);
+    list = list.slice().sort((a, b) => String(a.kniha || "").localeCompare(String(b.kniha || ""), "cs"));
+    tb.innerHTML = list.map((b) => {
+      const sub = [b.autor, b.serie, b.dil ? "díl " + b.dil : ""].filter(Boolean).join(" · ");
+      const cover = b.coverUrl
+        ? `<img class="cover cover-click" src="${esc(b.coverUrl)}" alt="" loading="lazy" data-detail onerror="this.outerHTML='<div class=&quot;cover-ph cover-click&quot; data-detail>📖</div>'">`
+        : `<div class="cover-ph cover-click" data-detail>📖</div>`;
+      return `<tr data-id="${b.id}">
+        <td class="cell-cover">${cover}</td>
+        <td class="cell-main">
+          <div class="book-title clickable" data-detail>${esc(b.kniha)}</div>
+          ${sub ? `<div class="book-sub">${esc(sub)}</div>` : ""}
+        </td>
+        <td data-l="Žánr">${b.zanr ? `<span class="chip">${esc(b.zanr)}</span>` : ""}</td>
+        <td data-l="Kde koupit">${esc(b.eshop)}</td>
+        <td data-l="" class="cell-track cell-wish-actions">
+          <button class="btn btn-sm" data-own title="Přesunout do Knihovny (koupeno)">✓ Koupeno</button>
+          <button class="btn-icon" data-edit title="Upravit">⋯</button>
+        </td>
+      </tr>`;
+    }).join("");
+    $("#wishEmpty").style.display = list.length ? "none" : "block";
   }
   function updateSortIndicators() {
     $$("#headRow th[data-sort]").forEach((th) => {
@@ -1296,11 +1392,11 @@
   });
 
   // filtry
-  ["#search", "#fSerie", "#fZanr", "#fStav", "#fTrack"].forEach((s) =>
+  ["#search", "#fSerie", "#fZanr", "#fTrack"].forEach((s) =>
     $(s).addEventListener("input", () => { saveFilters(); render(); }));
   $("#clearFilters").addEventListener("click", () => {
     $("#search").value = ""; $("#fSerie").value = ""; $("#fZanr").value = "";
-    $("#fStav").value = ""; $("#fTrack").value = "";
+    $("#fTrack").value = "";
     saveFilters(); render();
   });
   $("#readerSel").addEventListener("change", (e) => { activeReader = e.target.value; localStorage.setItem(LS_READER, activeReader); render(); });
@@ -1310,7 +1406,7 @@
     try {
       localStorage.setItem(LS_FILTERS, JSON.stringify({
         q: $("#search").value, s: $("#fSerie").value, z: $("#fZanr").value,
-        st: $("#fStav").value, t: $("#fTrack").value
+        t: $("#fTrack").value
       }));
     } catch (e) {}
   }
@@ -1320,7 +1416,6 @@
       if (f.q)  $("#search").value = f.q;
       if (f.s)  $("#fSerie").value = f.s;
       if (f.z)  $("#fZanr").value  = f.z;
-      if (f.st) $("#fStav").value  = f.st;
       if (f.t)  $("#fTrack").value = f.t;
     } catch (e) {}
   }
@@ -1332,6 +1427,7 @@
     $$(".modnav-btn").forEach((b) => b.classList.toggle("active", b.dataset.mod === mod));
     try { localStorage.setItem(LS_MODULE, mod); } catch (e) {}
     if (mod === "statistiky") renderStats();
+    if (mod === "prani") renderWishlist();
   }
   $("#modnav").addEventListener("click", (e) => {
     const b = e.target.closest("[data-mod]"); if (b) switchModule(b.dataset.mod);
@@ -1339,7 +1435,7 @@
 
   // ---- MODÁL: KNIHA -----------------------------------------
   let editingId = null;
-  function openBook(b) {
+  function openBook(b, presetStav) {
     editingId = b ? b.id : null;
     $("#bookModalTitle").textContent = b ? "Upravit knihu" : "Přidat knihu";
     $("#mKniha").value = b ? b.kniha : "";
@@ -1350,7 +1446,7 @@
     $("#mRok").value   = b ? (b.rokVydani || "") : "";
     $("#mStran").value = b ? b.pocetStran : "";
     $("#mEshop").value = b ? b.eshop : "";
-    $("#mStav").value  = b ? b.stav : "vlastněno";
+    $("#mStav").value  = b ? b.stav : (presetStav || "vlastněno");
     $("#mPozn").value  = b ? b.poznamka : "";
     $("#mCover").value = b ? (b.coverUrl || "") : "";
     $("#mDelete").style.display = b ? "" : "none";
@@ -1360,8 +1456,8 @@
   function updateCoverPrev() {
     const url = $("#mCover").value.trim();
     $("#mCoverPrev").innerHTML = url
-      ? `<img class="cover cover-preview" src="${esc(url)}" alt="" onerror="this.outerHTML='<div class=&quot;cover-ph cover-preview&quot;>📖</div>'">`
-      : `<div class="cover-ph cover-preview">📖</div>`;
+      ? `<img class="cover cover-edit" src="${esc(url)}" alt="" onerror="this.outerHTML='<div class=&quot;cover-ph cover-edit&quot;>📖</div>'">`
+      : `<div class="cover-ph cover-edit">📖</div>`;
     const q = encodeURIComponent(($("#mAutor").value + " " + $("#mKniha").value).trim());
     $("#mCoverSearch").href = "https://www.databazeknih.cz/search?q=" + q;
   }
@@ -1369,6 +1465,19 @@
   $("#mAutor").addEventListener("input", updateCoverPrev);
   $("#mKniha").addEventListener("input", updateCoverPrev);
   $("#addBook").addEventListener("click", () => openBook(null));
+
+  // ---- UDÁLOSTI: PŘÁNÍ --------------------------------------
+  $("#wishBody").addEventListener("click", (e) => {
+    const tr = e.target.closest("tr"); if (!tr) return;
+    const b = STATE.books.find((x) => x.id === tr.dataset.id); if (!b) return;
+    if (e.target.closest("[data-own]")) {
+      b.stav = "vlastněno"; markChanged(); rebuildFilters(); render(); return;
+    }
+    if (e.target.closest("[data-edit]")) { openBook(b); return; }
+    if (e.target.closest("[data-detail]")) { openDetail(b); return; }
+  });
+  $("#addWish").addEventListener("click", () => openBook(null, "k nákupu"));
+  $("#wishSearch").addEventListener("input", renderWishlist);
   $("#mCancel").addEventListener("click", () => closeModal("#bookModal"));
   $("#mSave").addEventListener("click", () => {
     const kniha = $("#mKniha").value.trim();
@@ -1682,6 +1791,7 @@
   function openModal(sel) { $(sel).classList.add("open"); }
   function closeModal(sel) { $(sel).classList.remove("open"); }
   $$(".modal-overlay").forEach((ov) => ov.addEventListener("click", (e) => { if (e.target === ov) ov.classList.remove("open"); }));
+  $$(".modal-x").forEach((x) => x.addEventListener("click", () => { const ov = x.closest(".modal-overlay"); if (ov) ov.classList.remove("open"); }));
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") $$(".modal-overlay.open").forEach((m) => m.classList.remove("open")); });
 
   // ---- START ------------------------------------------------
