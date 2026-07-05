@@ -100,13 +100,13 @@
     padding: 5px 12px 5px 11px;
     min-width: 0;
   }
-  .reader-pill .reader-ico { font-size: 1.05rem; display: inline-flex; align-items: center; }
+  .reader-pill .reader-ico { font-size: 0.95rem; display: inline-flex; align-items: center; }
   .reader-pill .reader-ico img.reader-avatar {
-    width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
+    width: 20px; height: 20px; border-radius: 50%; object-fit: cover;
     border: 1px solid var(--accent); display: block;
   }
   .reader-pill select {
-    font-size: 1.12rem; font-weight: 700; color: var(--accent);
+    font-size: 0.98rem; font-weight: 700; color: var(--accent);
     background: transparent; border: none; padding: 2px 2px;
     max-width: 170px; text-overflow: ellipsis; cursor: pointer;
   }
@@ -153,6 +153,7 @@
     animation: spin 0.9s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .sync-btn-settings { width: 100%; justify-content: center; margin: 4px 0 10px; padding: 9px 12px; font-size: 0.9rem; }
 
   /* === THEME TOGGLE ======================================== */
   .theme-toggle {
@@ -438,12 +439,30 @@
     .header-left { gap: 9px; flex: 1 1 auto; min-width: 0; }
     .header-actions { flex: 0 0 auto; gap: 6px; }
     .reader-pill { padding: 4px 10px 4px 9px; }
-    .reader-pill select { font-size: 1.05rem; max-width: 118px; }
+    .reader-pill select { font-size: 0.92rem; max-width: 112px; }
+    .reader-pill .reader-ico img.reader-avatar { width: 18px; height: 18px; }
+    .reader-pill .reader-ico { font-size: 0.9rem; }
     .theme-toggle .theme-toggle-label, .theme-toggle .theme-toggle-hint { display: none; }
     .theme-toggle { padding: 7px 10px; }
     main { padding: 14px; }
     .toolbar { gap: 8px; }
-    .toolbar .grow { min-width: 100%; }
+    /* Hledání + tlačítko (+ Kniha / + Přání) na 1 řádek */
+    .toolbar-actions { flex-wrap: nowrap; }
+    .toolbar-actions .grow { min-width: 0; flex: 1 1 auto; }
+    .toolbar-actions .btn { flex: 0 0 auto; }
+    /* Filtry Knihovny na 2 řádky (3 sloupce) */
+    section[data-module="knihovna"] .toolbar-filters {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px;
+    }
+    section[data-module="knihovna"] .toolbar-filters .filters-label { display: none; }
+    section[data-module="knihovna"] .toolbar-filters .filter-chk { justify-content: center; padding: 8px 6px; }
+    section[data-module="knihovna"] .toolbar-filters select { width: 100%; min-width: 0; }
+    section[data-module="knihovna"] .toolbar-filters label:has(#fReadOnly) { order: 1; }
+    section[data-module="knihovna"] .toolbar-filters label:has(#fCteckaOnly) { order: 2; }
+    section[data-module="knihovna"] .toolbar-filters #clearFilters { order: 3; width: 100%; padding: 8px 6px; }
+    section[data-module="knihovna"] .toolbar-filters #fSerie { order: 4; }
+    section[data-module="knihovna"] .toolbar-filters #fZanr { order: 5; }
+    section[data-module="knihovna"] .toolbar-filters #fTrack { order: 6; }
     select, input[type="text"], input[type="date"], input[type="search"],
     input[type="password"], input[type="url"], input[type="number"], textarea { font-size: 1rem; padding: 9px 11px; }
     .btn { font-size: 0.95rem; padding: 10px 14px; }
@@ -499,6 +518,14 @@
     /* Mobil: v Knihovně skryj Čtečku a Hodnocení, ať se vejde víc knih */
     section[data-module="knihovna"] table.books td[data-l="Čtečka"],
     section[data-module="knihovna"] table.books td[data-l="Hodnocení"] { display: none; }
+    /* Mobil: ⋯ pro úpravu knihy do pravého horního rohu karty */
+    section[data-module="knihovna"] table.books tbody tr { position: relative; }
+    section[data-module="knihovna"] table.books td.cell-track:last-child {
+      position: absolute; top: 6px; right: 6px;
+      padding: 0; width: auto; justify-content: flex-end;
+    }
+    section[data-module="knihovna"] table.books td.cell-track:last-child .btn-icon { font-size: 1.25rem; padding: 2px 8px; }
+    section[data-module="knihovna"] table.books td.cell-main { padding-right: 34px; }
     .form-grid { grid-template-columns: 1fr; }
     .modal { padding: 18px 16px; }
     .modal-overlay { padding: 16px 10px; }
@@ -619,9 +646,6 @@
     </div>
   </div>
   <div class="header-actions">
-    <button class="sync-btn" id="syncBtn" type="button" data-state="off" title="Synchronizace přes GitHub Gist">
-      <span class="sync-icon" id="syncIcon" aria-hidden="true">☁</span>
-    </button>
     <button
       class="theme-toggle"
       id="themeToggle"
@@ -743,6 +767,10 @@
       <div class="settings-group">
         <h3>Synchronizace</h3>
         <p>Zrcadlení dat mezi zařízeními přes soukromý GitHub Gist.</p>
+        <button class="sync-btn sync-btn-settings" id="syncBtn" type="button" data-state="off" title="Stav synchronizace">
+          <span class="sync-icon" id="syncIcon" aria-hidden="true">☁</span>
+          <span id="syncStatusLabel">Synchronizace</span>
+        </button>
         <button class="btn" id="syncSettingsBtn">Nastavit synchronizaci</button>
       </div>
     </div>
@@ -750,7 +778,7 @@
 </main>
 
 <footer class="app-footer">
-  (c) 2026 KeCl v1.8
+  (c) 2026 KeCl v1.9
 </footer>
 
 <!-- ===== MODÁL: KNIHA ===== -->
@@ -900,7 +928,7 @@
 (function () {
   "use strict";
 
-  const APP_VERSION = "1.8";
+  const APP_VERSION = "1.9";
   const LS_DATA    = "ctenar-data";
   const LS_CFG     = "ctenar-gistcfg";
   const LS_UPDATED = "ctenar-updatedAt";
@@ -1052,9 +1080,15 @@
   // ---- SYNC ORCHESTRACE -------------------------------------
   function setSyncState(state, msg) {
     const btn = $("#syncBtn");
+    if (!btn) return;
     btn.dataset.state = state;
     const icon = $("#syncIcon");
-    icon.textContent = state === "syncing" ? "⟳" : (state === "err" ? "⚠" : "☁");
+    if (icon) icon.textContent = state === "syncing" ? "⟳" : (state === "err" ? "⚠" : "☁");
+    const lbl = $("#syncStatusLabel");
+    if (lbl) lbl.textContent = state === "syncing" ? "Synchronizuji…"
+      : state === "ok" ? "Synchronizováno"
+      : state === "err" ? "Chyba synchronizace"
+      : state === "off" ? "Synchronizace vypnutá" : "Synchronizace";
     if (msg) btn.title = msg;
   }
   function schedulePush() {
